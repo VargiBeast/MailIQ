@@ -35,7 +35,7 @@ export function LandingPage() {
   const notice = showNotice ? (
     <div
       role={error ? "alert" : "status"}
-      className={`mx-auto mt-6 flex max-w-md items-start gap-2 rounded-xl border px-4 py-3 text-left text-[13.5px] ${
+      className={`mx-auto flex max-w-md items-start gap-2 rounded-xl border px-4 py-3 text-left text-[13.5px] ${
         error || !googleReady ? "border-warning/40 bg-warning/10" : "border-success/40 bg-success/10"
       }`}
     >
