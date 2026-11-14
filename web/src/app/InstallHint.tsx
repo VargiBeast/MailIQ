@@ -37,7 +37,7 @@ export function InstallHint() {
     <div
       className={cn(
         "fixed bottom-4 left-4 right-4 z-40 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-lg sm:left-auto",
-        closing ? "animate-out" : "animate-in",
+        closing ? "pointer-events-none animate-out" : "animate-in",
       )}
       onAnimationEnd={(e) => {
         if (!closing || e.target !== e.currentTarget || e.animationName !== "fade-out") return;
