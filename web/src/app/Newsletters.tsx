@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertCircle, AlertTriangle, Archive, CheckCircle2, ExternalLink, Mail, MailMinus, Menu, RefreshCw } from "lucide-react";
+import { AlertCircle, Archive, CheckCircle2, ExternalLink, Mail, MailMinus, Menu, RefreshCw, TriangleAlert } from "lucide-react";
 import { UNSUB_RANGES, type ArchiveResult, type NewsletterScan, type NewsletterSender, type UnsubRange } from "@shared/unsubscribe";
 import { api, errorMessage, qs } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -92,8 +93,8 @@ export function NewslettersPage() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 lg:px-8">
-        <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Menu className="size-5" /></IconButton>
-        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><MailMinus className="size-4 text-accent-400" /> Unsubscribe</h1>
+        <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Icon icon={Menu} size="lg" /></IconButton>
+        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><Icon icon={MailMinus} className="text-accent-400" /> Unsubscribe</h1>
         <div className="ml-auto flex items-center gap-2">
           <div role="radiogroup" aria-label="Time range" className="inline-flex rounded-lg border border-line bg-surface-2 p-0.5">
             {UNSUB_RANGES.map((r) => (
@@ -103,7 +104,7 @@ export function NewslettersPage() {
             ))}
           </div>
           <IconButton label="Rescan" onClick={() => void q.refetch()} disabled={q.isFetching}>
-            <RefreshCw className={cn("size-4", q.isFetching && "animate-spin")} />
+            <Icon icon={RefreshCw} className={q.isFetching ? "animate-spin" : undefined} />
           </IconButton>
         </div>
       </header>
@@ -113,16 +114,16 @@ export function NewslettersPage() {
             Newsletters and mailing lists that offer an unsubscribe option, least-opened first. Nothing happens until you click.
           </p>
           {q.isLoading ? (
-            <div className="space-y-2">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
+            <div className="space-y-2" aria-busy="true"><span className="sr-only">Loading…</span>{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
           ) : q.isError ? (
-            <EmptyState icon={<AlertCircle className="size-5" />} title="Couldn't scan your mail" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
+            <EmptyState icon={<Icon icon={AlertCircle} size="lg" />} title="Couldn't scan your mail" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
           ) : q.data && senders.length === 0 ? (
-            <EmptyState icon={<Mail className="size-5" />} title="No newsletters found" description={`No mail with an unsubscribe header in the last ${days} days.`} />
+            <EmptyState icon={<Icon icon={Mail} size="lg" />} title="No newsletters found" description={`No mail with an unsubscribe header in the last ${days} days.`} />
           ) : q.data ? (
             <>
               {q.data.errors.length > 0 && (
                 <p className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-                  <AlertTriangle className="size-4 text-warning" aria-hidden /> Some accounts couldn't be read: {q.data.errors.map((e) => e.message).join(" ")}
+                  <Icon icon={TriangleAlert} className="text-warning" /> Some accounts couldn't be read: {q.data.errors.map((e) => e.message).join(" ")}
                 </p>
               )}
               <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
@@ -130,7 +131,7 @@ export function NewslettersPage() {
                   {senders.length} sender{senders.length === 1 ? "" : "s"} · {q.data.sample.messages.toLocaleString()} emails scanned{q.data.sample.truncated ? ` (latest ${q.data.sample.limit} per account)` : ""}
                 </span>
                 <div className="flex-1" />
-                <Button size="sm" icon={<Archive className="size-3.5" />} disabled={!chosen.length} onClick={() => setArchiveFor(chosen)}>
+                <Button size="sm" icon={<Icon icon={Archive} size="sm" />} disabled={!chosen.length} onClick={() => setArchiveFor(chosen)}>
                   Archive all from {chosen.length || "selected"}{chosen.length ? ` sender${chosen.length === 1 ? "" : "s"}` : ""}
                 </Button>
               </div>
@@ -212,7 +213,7 @@ function SenderRow({ s, selected, onToggle, unsubscribedAt, busy, onOneClick, on
           <span className={cn("font-medium", tone === "low" ? "text-danger" : tone === "mid" ? "text-warning" : "text-fg-2")}>{openRateLabel(s)}</span>
           <span>{s.inInbox} in Inbox</span>
           <span>Last {relative(s.lastAt)}</span>
-          {unsubscribedAt && <span className="inline-flex items-center gap-1 text-success"><CheckCircle2 className="size-3.5" aria-hidden />Unsubscribed {relative(unsubscribedAt)}</span>}
+          {unsubscribedAt && <span className="inline-flex items-center gap-1 text-success"><Icon icon={CheckCircle2} size="sm" />Unsubscribed {relative(unsubscribedAt)}</span>}
         </div>
       </div>
       <div className="flex items-center gap-1.5">
@@ -224,10 +225,10 @@ function SenderRow({ s, selected, onToggle, unsubscribedAt, busy, onOneClick, on
           <a href={s.methods.link} target="_blank" rel="noopener noreferrer nofollow" onClick={onLinkOpened}
             className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 text-[13px] text-fg hover:bg-surface-3"
             title="Opens the sender's unsubscribe page in a new tab">
-            Open unsubscribe page <ExternalLink className="size-3.5" aria-hidden />
+            Open unsubscribe page <Icon icon={ExternalLink} size="sm" />
           </a>
         ) : null}
-        <IconButton label={`Archive all from ${name}`} size="sm" onClick={onArchive} disabled={s.inInbox === 0}><Archive className="size-4" /></IconButton>
+        <IconButton label={`Archive all from ${name}`} size="sm" onClick={onArchive} disabled={s.inInbox === 0}><Icon icon={Archive} /></IconButton>
       </div>
     </li>
   );

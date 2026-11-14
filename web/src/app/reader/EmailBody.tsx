@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import { Ellipsis, ImageOff } from "lucide-react";
 import type { AttachmentMeta, MessageDetail } from "@shared/mail";
 import { buildSrcDoc, sanitizeEmailHtml, splitQuoted, textToHtml } from "@/lib/sanitize";
 import { attachmentUrl } from "@/lib/mail";
@@ -77,7 +78,7 @@ export function EmailBody({ message, accountId }: { message: MessageDetail; acco
     <div className="space-y-2">
       {rendered.blockedImages > 0 && !allowImages && pref !== "never" && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[12.5px] text-fg-2">
-          <ImageOff className="size-4 text-fg-3" aria-hidden />
+          <Icon icon={ImageOff} className="text-fg-3" />
           <span className="flex-1">Remote images are hidden to protect your privacy (they can track when you open mail).</span>
           <button type="button" className="font-medium text-accent-ink hover:underline" onClick={() => setAllowImages(true)}>Show images</button>
         </div>
@@ -95,8 +96,9 @@ export function EmailBody({ message, accountId }: { message: MessageDetail; acco
         />
       </div>
       {rendered.hasQuote && (
-        <button type="button" onClick={() => setShowQuoted((v) => !v)} className="rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-expanded={showQuoted}>
-          {showQuoted ? "Hide quoted text" : "••• Show quoted text"}
+        <button type="button" onClick={() => setShowQuoted((v) => !v)} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-expanded={showQuoted}>
+          <Icon icon={Ellipsis} />
+          {showQuoted ? "Hide quoted text" : "Show quoted text"}
         </button>
       )}
     </div>

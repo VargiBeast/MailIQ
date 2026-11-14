@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Lock, Pencil, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ThreadDetail } from "@shared/mail";
@@ -14,7 +15,7 @@ export function NoteButton({ thread, onClick }: { thread: ThreadDetail; onClick:
   const has = Boolean(note.data);
   return (
     <IconButton label={has ? "Edit private note (n)" : "Add private note (n)"} active={has} onClick={onClick} data-note-trigger="">
-      <StickyNote className="size-[18px]" />
+      <Icon icon={StickyNote} size="lg" />
     </IconButton>
   );
 }
@@ -52,15 +53,15 @@ export function ThreadNotePanel({ thread, editing, onEditingChange }: { thread: 
   return (
     <section aria-label="Private note" className="rounded-xl border border-amber-400/30 bg-amber-400/[0.06] p-3">
       <div className="mb-1.5 flex items-center gap-2 text-[12px] text-fg-3">
-        <StickyNote className="size-3.5 text-amber-400" aria-hidden />
+        <Icon icon={StickyNote} size="sm" className="text-amber-400" />
         <span className="font-medium text-fg-2">Private note</span>
-        <span className="inline-flex items-center gap-1"><Lock className="size-3" aria-hidden />Only you can see this</span>
+        <span className="inline-flex items-center gap-1"><Icon icon={Lock} size="xs" />Only you can see this</span>
         {note.data && !editing && <span>· edited {relative(note.data.updatedAt)}</span>}
         <div className="flex-1" />
         {note.data && !editing && (
           <>
-            <IconButton size="sm" label="Edit note" onClick={() => onEditingChange(true)}><Pencil className="size-3.5" /></IconButton>
-            <IconButton size="sm" label="Delete note" onClick={() => del.mutate(undefined, { onSuccess: () => toast.success("Note deleted") })}><Trash2 className="size-3.5" /></IconButton>
+            <IconButton size="sm" label="Edit note" onClick={() => onEditingChange(true)}><Icon icon={Pencil} size="sm" /></IconButton>
+            <IconButton size="sm" label="Delete note" onClick={() => del.mutate(undefined, { onSuccess: () => toast.success("Note deleted") })}><Icon icon={Trash2} size="sm" /></IconButton>
           </>
         )}
       </div>

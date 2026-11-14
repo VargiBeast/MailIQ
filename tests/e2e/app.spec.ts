@@ -18,6 +18,8 @@ test("signs in with Google (PKCE), completes onboarding and lands in the unified
   await signIn(page);
   await expect(page.getByRole("heading", { name: /Inbox/ })).toBeVisible();
   await expect(page.locator('[data-thread-id="t-canary"]')).toBeVisible();
+  const star = page.getByRole("button", { name: "Star conversation" }).first();
+  await expect(star).toHaveAttribute("aria-pressed", /^(true|false)$/);
   // Trash and spam never show in the inbox
   await expect(page.locator('[data-thread-id="t-trash"]')).toHaveCount(0);
   await shot(page, "03-inbox-desktop");
@@ -165,6 +167,8 @@ test("Copilot turns an instruction into a plan, runs it only after Confirm, and 
   await expect(page.locator('[data-thread-id="t-news"]')).toBeVisible();
   await page.keyboard.press("Control+k");
   const palette = page.getByRole("dialog", { name: "Command palette" });
+  await expect(palette.getByRole("listbox", { name: "Commands" })).toBeVisible();
+  await expect(palette.getByRole("group", { name: "Go to" })).toBeVisible();
   await palette.getByRole("combobox", { name: "Command" }).fill("Archive the newsletters");
   await palette.getByRole("option", { name: /Ask Copilot: “Archive the newsletters”/ }).click();
   const panel = page.getByRole("dialog", { name: "FLUENT Copilot" });

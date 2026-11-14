@@ -1,5 +1,6 @@
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, EyeOff, Inbox, Keyboard, Lock, MessageSquareText, PenLine, Search, ShieldCheck, Sparkles, Tags } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import { CheckCircle2, EyeOff, Inbox, Keyboard, Lock, MessageSquareText, Pencil, Search, ShieldCheck, Sparkles, Tags, TriangleAlert } from "lucide-react";
 import { useSession } from "@/lib/session";
 import { Logo } from "@/components/ui/misc";
 import { Splash } from "@/components/Splash";
@@ -18,7 +19,7 @@ const ERRORS: Record<string, string> = {
 const FEATURES = [
   { icon: Inbox, title: "One calm inbox", text: "Your connected accounts in one unified, fast inbox with folders, labels, filters and keyboard shortcuts." },
   { icon: Sparkles, title: "Summaries that get to the point", text: "Open a thread and see a short summary, key points, action items and deadlines." },
-  { icon: PenLine, title: "Replies in your voice", text: "Draft, shorten or change the tone of an email. You always review AI text before it's sent." },
+  { icon: Pencil, title: "Replies in your voice", text: "Draft, shorten or change the tone of an email. You always review AI text before it's sent." },
   { icon: Search, title: "Search the way you think", text: "“Find the invoice I got last month” becomes a precise mailbox search you can see and edit." },
   { icon: MessageSquareText, title: "Ask your inbox", text: "Ask questions about your mail and get answers that link to the exact emails they came from." },
   { icon: ShieldCheck, title: "Private by design", text: "No email bodies stored, remote images blocked, AI exclusions for senders and labels, and a full AI access log." },
@@ -71,7 +72,7 @@ export function LandingPage() {
 
       <main className="relative">
         <section className="mx-auto max-w-6xl px-5 pb-16 pt-12 text-center sm:pt-20">
-          <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-[var(--ai-border)] bg-accent-soft px-3 py-1 text-[12.5px] text-ai-title"><Sparkles className="size-3.5" /> Private AI-assisted email</p>
+          <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-[var(--ai-border)] bg-accent-soft px-3 py-1 text-[12.5px] text-ai-title"><Icon icon={Sparkles} size="sm" /> Private AI-assisted email</p>
           <h1 className="mx-auto mt-6 max-w-3xl text-balance text-4xl font-semibold leading-[1.08] tracking-tight sm:text-6xl">
             Your inbox, <span className="bg-gradient-to-r from-accent-300 to-accent-600 bg-clip-text text-transparent">understood.</span>
           </h1>
@@ -80,7 +81,7 @@ export function LandingPage() {
           </p>
           {(error || deleted || !googleReady) && (
             <div role={error ? "alert" : "status"} className={`mx-auto mt-6 flex max-w-md items-start gap-2 rounded-xl border px-4 py-3 text-left text-[13.5px] ${error || !googleReady ? "border-warning/40 bg-warning/10" : "border-success/40 bg-success/10"}`}>
-              {error || !googleReady ? <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" /> : <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />}
+              {error || !googleReady ? <Icon icon={TriangleAlert} className="mt-0.5 shrink-0 text-warning" /> : <Icon icon={CheckCircle2} className="mt-0.5 shrink-0 text-success" />}
               <span className="text-fg-2">
                 {deleted ? "Your MailIQ data was deleted and Google access revoked." : error ? (ERRORS[error] ?? "Sign-in didn't complete. Please try again.") : "Google sign-in isn't configured on this server. The owner needs to add Google OAuth credentials (see docs/SETUP.md)."}
               </span>
@@ -99,7 +100,7 @@ export function LandingPage() {
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <div key={f.title} className="rounded-2xl border border-line bg-surface/70 p-5 transition-colors hover:border-[var(--ai-border)]">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent-ink"><f.icon className="size-5" /></span>
+                <span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent-ink"><Icon icon={f.icon} size="lg" /></span>
                 <h3 className="mt-4 text-[15.5px] font-semibold text-fg">{f.title}</h3>
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-fg-2">{f.text}</p>
               </div>
@@ -111,7 +112,7 @@ export function LandingPage() {
               { icon: Tags, text: "Labels, folders and filters — actions sync back to your mail provider." },
               { icon: EyeOff, text: "Tracking pixels and remote images blocked until you allow them." },
             ].map((x) => (
-              <div key={x.text} className="flex items-start gap-3 rounded-xl border border-line bg-surface/50 p-4 text-[13px] text-fg-2"><x.icon className="mt-0.5 size-4 shrink-0 text-accent-ink" />{x.text}</div>
+              <div key={x.text} className="flex items-start gap-3 rounded-xl border border-line bg-surface/50 p-4 text-[13px] text-fg-2"><Icon icon={x.icon} size="md" className="mt-0.5 shrink-0 text-accent-ink" />{x.text}</div>
             ))}
           </div>
         </section>
@@ -119,7 +120,7 @@ export function LandingPage() {
         <section id="privacy" className="mx-auto max-w-6xl px-5 py-16">
           <div className="ai-block grid gap-8 rounded-3xl p-8 sm:p-10 lg:grid-cols-[1.1fr_1fr]">
             <div>
-              <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Lock className="size-5 text-accent-ink" /> Your mail stays yours</h2>
+              <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Icon icon={Lock} size="lg" className="text-accent-ink" /> Your mail stays yours</h2>
               <p className="mt-3 text-[15px] leading-relaxed text-fg-2">MailIQ connects through official provider APIs (starting with Google) with your permission. It fetches mail live and does not keep copies of your messages. AI only sees the emails needed for the request you make, and the AI can't send, delete or forward anything by itself.</p>
               <div className="mt-5 flex flex-wrap gap-4 text-[13.5px]">
                 <Link to="/privacy" className="text-accent-ink hover:underline">Read the privacy policy</Link>
@@ -135,7 +136,7 @@ export function LandingPage() {
                 "Export or delete your MailIQ data in one click",
                 "Your mail data is never used for ads or to train MailIQ models",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-accent-ink" />{t}</li>
+                <li key={t} className="flex items-start gap-2.5"><Icon icon={CheckCircle2} className="mt-0.5 shrink-0 text-accent-ink" />{t}</li>
               ))}
             </ul>
           </div>
@@ -183,7 +184,7 @@ function ProductPreview() {
         <div className="hidden space-y-4 p-6 sm:block">
           <div className="h-4 w-2/3 rounded bg-fg/60" />
           <div className="ai-block space-y-2 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-[12px] font-medium text-ai-title"><Sparkles className="size-3.5" /> AI summary</div>
+            <div className="flex items-center gap-2 text-[12px] font-medium text-ai-title"><Icon icon={Sparkles} size="sm" /> AI summary</div>
             <div className="h-2.5 w-full rounded bg-accent-300/30" />
             <div className="h-2.5 w-5/6 rounded bg-accent-300/30" />
             <div className="h-2.5 w-2/3 rounded bg-accent-300/30" />

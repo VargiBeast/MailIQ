@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, Check, Moon, ShieldCheck, Sparkles, Sun } from "lucide-react";
+import { Check, Moon, ShieldCheck, Sparkles, Sun, TriangleAlert } from "lucide-react";
 import { useSession } from "@/lib/session";
 import { useUpdateSettings } from "@/lib/settings";
 import { cn } from "@/lib/cn";
@@ -47,7 +48,7 @@ export function OnboardingPage() {
                   <li key={a.id} className="flex items-center gap-3 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
                     <Avatar name={a.name} email={a.email} src={a.picture} size={32} />
                     <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">{a.email}</span>
-                    {a.status === "active" ? <span className="flex items-center gap-1 text-xs text-success"><Check className="size-3.5" /> Gmail connected</span> : <span className="flex items-center gap-1 text-xs text-danger"><AlertTriangle className="size-3.5" /> No Gmail access</span>}
+                    {a.status === "active" ? <span className="flex items-center gap-1 text-xs text-success"><Icon icon={Check} size="sm" /> Gmail connected</span> : <span className="flex items-center gap-1 text-xs text-danger"><Icon icon={TriangleAlert} size="sm" /> No Gmail access</span>}
                   </li>
                 ))}
               </ul>
@@ -64,9 +65,9 @@ export function OnboardingPage() {
               <h1 className="text-xl font-semibold text-fg">Choose your look</h1>
               <p className="mt-1 text-[13.5px] text-fg-3">You can change this any time in Settings.</p>
               <div className="mt-5 grid grid-cols-3 gap-3" role="radiogroup" aria-label="Theme">
-                {([["dark", "Dark", Moon], ["light", "Light", Sun], ["system", "System", Sparkles]] as const).map(([v, label, Icon]) => (
+                {([["dark", "Dark", Moon], ["light", "Light", Sun], ["system", "System", Sparkles]] as const).map(([v, label, glyph]) => (
                   <button key={v} type="button" role="radio" aria-checked={s.appearance.theme === v} onClick={() => update.mutate({ appearance: { theme: v } })} className={cn("flex flex-col items-center gap-2 rounded-xl border p-4 text-[13px]", s.appearance.theme === v ? "border-accent bg-accent-soft text-fg" : "border-line bg-surface-2 text-fg-2 hover:text-fg")}>
-                    <Icon className="size-5" />{label}
+                    <Icon icon={glyph} size="lg" active={s.appearance.theme === v} />{label}
                   </button>
                 ))}
               </div>
@@ -86,7 +87,7 @@ export function OnboardingPage() {
           )}
           {step === 3 && (
             <>
-              <h1 className="flex items-center gap-2 text-xl font-semibold text-fg"><ShieldCheck className="size-5 text-accent-ink" /> Your privacy</h1>
+              <h1 className="flex items-center gap-2 text-xl font-semibold text-fg"><Icon icon={ShieldCheck} size="lg" className="text-accent-ink" /> Your privacy</h1>
               <ul className="mt-4 space-y-2.5 text-[13.5px] text-fg-2">
                 <li>• Email bodies are never stored by MailIQ — they're read live from Gmail.</li>
                 <li>• Remote images are blocked by default so senders can't track when you open mail.</li>

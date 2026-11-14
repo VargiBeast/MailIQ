@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { singleKeysOff } from "@/lib/prefs";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { AlertTriangle, Check, ChevronDown, ChevronUp, Inbox, Loader2, Menu as MenuIcon, Paperclip, RefreshCw, Reply, Search, Sparkles, Star, Wand2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Inbox, Loader2, Menu as MenuIcon, Paperclip, RefreshCw, Reply, Search, Sparkles, Star, TriangleAlert, Wand2, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Category, Folder, ThreadSummary } from "@shared/mail";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/misc";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { FOLDER_META } from "./nav";
 import { IconButton, Button } from "@/components/ui/Button";
 import { Menu, MenuCheckbox, MenuContent, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { cn } from "@/lib/cn";
@@ -15,7 +18,6 @@ import { useFocusMode } from "@/lib/focus";
 import { useThreadAction, useThreads, useDrafts, type ListArgs } from "@/lib/mail";
 import { useSession } from "@/lib/session";
 import { api, errorMessage } from "@/lib/api";
-import { FOLDER_META } from "./nav";
 import { useComposer } from "./composer/context";
 import { useCopilot } from "./copilot/context";
 import { DailyBriefCard } from "./DailyBrief";
@@ -238,8 +240,8 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
           {folder === "inbox" && categoriesAvailable ? (
             <Menu>
               <MenuTrigger asChild>
-                <button type="button" aria-label={`Inbox section: ${sectionLabel}. Change section`} className="-ml-1 flex items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-medium text-fg-3 hover:bg-surface-2 hover:text-fg focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]">
-                  {sectionLabel}<ChevronDown className="size-3.5" aria-hidden />
+                <button type="button" aria-label={`Inbox section: ${sectionLabel}. Change section`} className="-ml-1 flex items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-medium text-fg-3 hover:bg-surface-2 hover:text-fg">
+                  {sectionLabel}<Icon icon={ChevronDown} size="sm" />
                 </button>
               </MenuTrigger>
               <MenuContent align="start">
@@ -260,20 +262,20 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
             size="sm"
             onClick={() => { void qc.invalidateQueries({ queryKey: isDrafts ? ["drafts"] : ["threads"] }); void qc.invalidateQueries({ queryKey: ["labels"] }); }}
           >
-            <RefreshCw className={cn("size-3.5", (threads.isRefetching || drafts.isRefetching) && "animate-spin")} />
+            <Icon icon={RefreshCw} size="sm" className={(threads.isRefetching || drafts.isRefetching) ? "animate-spin" : undefined} />
           </IconButton>
         </div>
 
         {folder === "search" && (args.nl || args.q) && (
           <div className="ai-block rounded-xl px-3 py-2 text-[12.5px]">
             <div className="flex items-start gap-2">
-              {args.nl ? <Sparkles className="mt-0.5 size-3.5 shrink-0 text-accent-ink" aria-hidden /> : <Search className="mt-0.5 size-3.5 shrink-0 text-fg-3" aria-hidden />}
+              {args.nl ? <Icon icon={Sparkles} size="sm" className="mt-0.5 shrink-0 text-accent-ink" /> : <Icon icon={Search} size="sm" className="mt-0.5 shrink-0 text-fg-3" />}
               <div className="min-w-0 flex-1 text-fg-2">
                 {args.nl && <p className="text-fg">“{args.nl}”</p>}
                 {args.explanation && <p>{args.explanation}</p>}
                 <p className="mt-0.5 break-all font-mono text-[11.5px] text-fg-3">Gmail query: {args.q}{args.filter === "unanswered" ? " · only threads where the last message isn't yours" : ""}</p>
               </div>
-              <Link to={args.account ? `/app/inbox?account=${args.account}` : "/app/inbox"} aria-label="Clear search" className="rounded p-0.5 text-fg-3 hover:text-fg"><X className="size-3.5" /></Link>
+              <Link to={args.account ? `/app/inbox?account=${args.account}` : "/app/inbox"} aria-label="Clear search" className="rounded p-0.5 text-fg-3 hover:text-fg"><Icon icon={X} size="sm" /></Link>
             </div>
           </div>
         )}
@@ -281,7 +283,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
 
       {accountErrors.length > 0 && (
         <div role="alert" className="mx-3 mt-3 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+          <Icon icon={TriangleAlert} className="mt-0.5 shrink-0 text-warning" />
           <span className="flex-1">{accountErrors.map((e) => e.message).join(" ")}</span>
           <Link to="/app/account#accounts" className="shrink-0 font-medium text-accent-ink hover:underline">Fix</Link>
         </div>
@@ -294,14 +296,14 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
           <ListSkeleton />
         ) : threads.isError ? (
           <EmptyState
-            icon={<AlertTriangle className="size-5" />}
+            icon={<Icon icon={TriangleAlert} size="lg" />}
             title="Couldn't load your mail"
             description={errorMessage(threads.error)}
             action={<div className="flex gap-2"><Button onClick={() => void threads.refetch()}>Try again</Button><Link to="/app/account#accounts"><Button variant="ghost">Account settings</Button></Link></div>}
           />
         ) : all.length === 0 ? (
           <EmptyState
-            icon={<Inbox className="size-5" />}
+            icon={<Icon icon={Inbox} size="lg" />}
             title={folder === "search" ? "No matching email" : `Nothing in ${title}`}
             description={EMPTY_HINT[folder] ?? "When there's mail here, it will show up instantly."}
           />
@@ -320,7 +322,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
           <ul className={cn("pb-4", picked.size > 0 && "pb-24 lg:pb-4")} aria-label="Conversations">
             {starred.length > 0 && (
               <li>
-                <GroupHeader label="Starred" action={<button type="button" className="flex items-center gap-1 text-[11.5px] text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:text-fg" onClick={() => setShowStarred((v) => !v)} aria-expanded={showStarred}>{showStarred ? "Hide" : "Show"}<ChevronUp className={cn("size-3.5 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", !showStarred && "rotate-180")} /></button>} />
+                <GroupHeader label="Starred" action={<button type="button" className="flex items-center gap-1 text-[11.5px] text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:text-fg" onClick={() => setShowStarred((v) => !v)} aria-expanded={showStarred}>{showStarred ? "Hide" : "Show"}<Icon icon={ChevronUp} size="sm" className={cn("transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", !showStarred && "rotate-180")} /></button>} />
                 {showStarred && <ul className="animate-reveal">{starred.map((t) => <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} reducedMotion={reducedMotion} />)}</ul>}
               </li>
             )}
@@ -503,7 +505,7 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
     <li className="relative [contain-intrinsic-size:auto_78px] [content-visibility:auto]">
       {swiping && (
         <div ref={revealRef} aria-hidden className="absolute inset-y-0 right-2 flex items-center gap-1.5 rounded-xl bg-accent-soft px-4 text-[13px] font-medium text-accent-ink transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] data-[armed=true]:bg-accent data-[armed=true]:text-accent-fg">
-          <Reply className="size-4" /> Reply
+          <Icon icon={Reply} /> Reply
         </div>
       )}
       <div
@@ -526,10 +528,11 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
         onPointerCancel={() => { cancelPress(); endSwipe(); }}
         onContextMenu={(e) => { if (press.current?.fired) e.preventDefault(); }}
       >
-        <div className="relative size-9 shrink-0">
+        <div className="relative size-9 shrink-0 pointer-coarse:size-11">
           <span className={cn("block transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)]", (picked || selecting) ? "opacity-0" : "group-hover:opacity-0 group-focus-within:opacity-0")}>
             <Avatar name={displayName(t.from)} email={t.from.email} size={36} />
           </span>
+          <Tooltip content={`Select: ${t.subject || "(no subject)"}`}>
           <button
             type="button"
             role="checkbox"
@@ -537,13 +540,14 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
             aria-label={`Select: ${t.subject || "(no subject)"}`}
             onClick={(e) => { e.stopPropagation(); onPick(e.shiftKey); }}
             className={cn(
-              "absolute inset-0 flex items-center justify-center rounded-full border transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
+              "absolute inset-0 flex items-center justify-center rounded-full border transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:opacity-100",
               picked ? "border-accent bg-accent text-accent-fg opacity-100" : "border-line-strong bg-surface-2 text-transparent",
               !picked && (selecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
             )}
           >
-            <Check className="size-4" />
+            <Icon icon={Check} active />
           </button>
+          </Tooltip>
         </div>
         <button type="button" onClick={(e) => { e.stopPropagation(); click(e); }} className="min-w-0 flex-1 text-left outline-none" aria-current={selected ? "true" : undefined}>
           <span className="flex items-baseline gap-2">
@@ -555,28 +559,38 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
             {t.unread && <span className="size-2 shrink-0 self-center rounded-full bg-accent" role="img" aria-label="Unread" />}
           </span>
           <span className={cn("mt-0.5 block truncate text-[13.5px]", t.unread ? "font-semibold text-fg" : "text-fg-2")}>
-            {t.important && <span className="mr-1 text-warning" title="Important" aria-label="Important">›</span>}
+            {t.important && (
+              <span role="img" className="mr-1 inline-flex text-warning" aria-label="Important" title="Important">
+                <Icon icon={FOLDER_META.important.icon} size="xs" />
+              </span>
+            )}
             {t.subject}
           </span>
           <span className="mt-0.5 flex items-center gap-2">
             <span className="min-w-0 flex-1 truncate text-[13px] text-fg-3">{t.snippet}</span>
             {multiAccount && <span className="size-1.5 shrink-0 rounded-full" style={{ background: ["#a78bfa", "#38bdf8", "#f472b6", "#34d399", "#fbbf24"][Math.max(0, accIdx) % 5] }} title="Account" aria-hidden />}
-            {t.hasAttachments && <Paperclip className="size-3.5 shrink-0 text-fg-3" aria-label="Has attachments" />}
+            {t.hasAttachments && (
+              <span role="img" aria-label="Has attachments" title="Has attachments" className="inline-flex shrink-0 text-fg-3">
+                <Icon icon={Paperclip} size="sm" />
+              </span>
+            )}
             {t.messageCount > 1 && (
               <span className={cn("inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold", "text-fg-3")} aria-label={`${t.messageCount} messages`}>{t.messageCount}</span>
             )}
             <span className="w-6 shrink-0" aria-hidden />
           </span>
         </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onStar(); }}
-          aria-label={t.starred ? "Unstar conversation" : "Star conversation"}
-          aria-pressed={t.starred}
-          className={cn("absolute bottom-[calc(var(--row-py,12px)-4px)] right-1.5 rounded-full p-1 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]", t.starred ? "text-amber-400" : "text-fg-3 hover:text-fg-2")}
-        >
-          <Star className="size-[18px]" fill={t.starred ? "currentColor" : "none"} strokeWidth={1.75} />
-        </button>
+        <Tooltip content="Star conversation">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onStar(); }}
+            aria-label="Star conversation"
+            aria-pressed={t.starred}
+            className={cn("absolute bottom-[calc(var(--row-py,12px)-4px)] right-1.5 inline-flex items-center justify-center rounded-full p-1 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] pointer-coarse:min-h-11 pointer-coarse:min-w-11", t.starred ? "text-amber-400" : "text-fg-3 hover:text-fg-2")}
+          >
+            <Icon icon={Star} size="lg" active={t.starred} className={t.starred ? "text-amber-400" : undefined} fill={t.starred ? "currentColor" : "none"} />
+          </button>
+        </Tooltip>
       </div>
     </li>
   );
@@ -584,7 +598,8 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
 
 function ListSkeleton() {
   return (
-    <div className="space-y-1 p-3" aria-busy="true" aria-label="Loading conversations">
+    <div className="space-y-1 p-3" role="status" aria-live="polite" aria-busy="true" aria-label="Loading conversations">
+      <span className="sr-only">Loading…</span>
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="shimmer-row flex gap-3 px-2 py-3">
           <div className="size-9 shrink-0 rounded-full bg-surface-2" />
@@ -601,9 +616,9 @@ function ListSkeleton() {
 
 function DraftsList({ drafts, onOpen }: { drafts: ReturnType<typeof useDrafts>; onOpen: (d: { accountId: string; draftId: string }) => void }) {
   if (drafts.isLoading) return <ListSkeleton />;
-  if (drafts.isError) return <EmptyState icon={<AlertTriangle className="size-5" />} title="Couldn't load drafts" description={errorMessage(drafts.error)} action={<Button onClick={() => void drafts.refetch()}>Try again</Button>} />;
+  if (drafts.isError) return <EmptyState icon={<Icon icon={TriangleAlert} size="lg" />} title="Couldn't load drafts" description={errorMessage(drafts.error)} action={<Button onClick={() => void drafts.refetch()}>Try again</Button>} />;
   const list = drafts.data?.drafts ?? [];
-  if (list.length === 0) return <EmptyState icon={<Inbox className="size-5" />} title="No drafts" description="Drafts you save in MailIQ or Gmail appear here." />;
+  if (list.length === 0) return <EmptyState icon={<Icon icon={Inbox} size="lg" />} title="No drafts" description="Drafts you save in MailIQ or Gmail appear here." />;
   return (
     <ul className="py-2" aria-label="Drafts">
       {list.map((d) => (
@@ -647,7 +662,7 @@ function SearchPill({ inputRef, value, onChange, searching, aiOn, onOpenSidebar,
   const text = value.trim();
   const asks = aiOn && QUESTION.test(text);
   const showOptions = focused && text.length > 0;
-  const opt = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-fg-2 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none";
+  const opt = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-fg-2 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent-ring)]";
   const keep = (e: React.MouseEvent) => e.preventDefault(); // don't blur the input before the click lands
   const pick = (f: () => void) => { f(); setFocused(false); inputRef.current?.blur(); };
   return (
@@ -657,8 +672,8 @@ function SearchPill({ inputRef, value, onChange, searching, aiOn, onOpenSidebar,
         onSubmit={(e) => { e.preventDefault(); pick(() => (asks ? onAsk(text) : onSearch("gmail"))); }}
         className="flex h-12 items-center gap-1 rounded-full bg-surface-2 pl-1.5 pr-1.5 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-within:bg-surface-3 lg:h-11"
       >
-        <IconButton label="Open navigation" className="lg:hidden" onClick={onOpenSidebar}><MenuIcon className="size-5" /></IconButton>
-        <Search className="ml-2.5 hidden size-4 shrink-0 text-fg-3 lg:block" aria-hidden />
+        <IconButton label="Open navigation" className="lg:hidden" onClick={onOpenSidebar}><Icon icon={MenuIcon} size="lg" /></IconButton>
+        <Icon icon={Search} className="ml-2.5 hidden shrink-0 text-fg-3 lg:block" />
         <input
           ref={inputRef}
           id="mail-search"
@@ -673,28 +688,35 @@ function SearchPill({ inputRef, value, onChange, searching, aiOn, onOpenSidebar,
           enterKeyHint={asks ? "send" : "search"}
           className="h-full min-w-0 flex-1 bg-transparent px-2 text-[15px] text-fg placeholder:text-fg-3 outline-none lg:text-[14px] [&::-webkit-search-cancel-button]:hidden"
         />
-        {searching && <Loader2 className="size-4 shrink-0 animate-spin text-fg-3" aria-label="Searching" />}
+        {searching && (
+          <span role="status" className="inline-flex shrink-0 text-fg-3">
+            <Icon icon={Loader2} className="animate-spin" />
+            <span className="sr-only">Searching</span>
+          </span>
+        )}
         {aiOn && (
           <IconButton label="Ask with Copilot" onClick={() => onAsk(text)}>
-            <Sparkles className="size-[18px]" />
+            <Icon icon={Sparkles} size="lg" />
           </IconButton>
         )}
-        <button type="button" onClick={() => navigate("/app/account#accounts")} aria-label="Accounts and settings" className="shrink-0 rounded-full p-0.5 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] lg:hidden">
-          <Avatar name={session?.user?.name ?? "Me"} email={session?.user?.email} src={session?.user?.picture} size={32} />
-        </button>
+        <Tooltip content="Accounts and settings">
+          <button type="button" onClick={() => navigate("/app/account#accounts")} aria-label="Accounts and settings" className="inline-flex shrink-0 items-center justify-center rounded-full p-0.5 pointer-coarse:min-h-11 pointer-coarse:min-w-11 lg:hidden">
+            <Avatar name={session?.user?.name ?? "Me"} email={session?.user?.email} src={session?.user?.picture} size={32} />
+          </button>
+        </Tooltip>
       </form>
       {showOptions && (
         <div role="group" aria-label="Search options" className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-2xl border border-line bg-surface py-1 shadow-[var(--shadow)]">
           <button type="button" onMouseDown={keep} onClick={() => pick(() => onSearch("gmail"))} className={opt}>
-            <Search className="size-4 shrink-0 text-fg-3" aria-hidden /><span className="min-w-0 truncate">Search mail for “{text}”</span>{!asks && <kbd className="ml-auto text-[11px] text-fg-3">Enter</kbd>}
+            <Icon icon={Search} className="shrink-0 text-fg-3" /><span className="min-w-0 truncate">Search mail for “{text}”</span>{!asks && <kbd className="ml-auto text-[11px] text-fg-3">Enter</kbd>}
           </button>
           {aiOn && (
             <>
               <button type="button" onMouseDown={keep} onClick={() => pick(() => onSearch("smart"))} className={opt}>
-                <Wand2 className="size-4 shrink-0 text-fg-3" aria-hidden /><span className="min-w-0 truncate">Smart search: “{text}”</span>
+                <Icon icon={Wand2} className="shrink-0 text-fg-3" /><span className="min-w-0 truncate">Smart search: “{text}”</span>
               </button>
               <button type="button" onMouseDown={keep} onClick={() => pick(() => onAsk(text))} className={opt}>
-                <Sparkles className="size-4 shrink-0 text-accent-ink" aria-hidden /><span className="min-w-0 truncate">Ask Copilot: “{text}”</span>{asks && <kbd className="ml-auto text-[11px] text-fg-3">Enter</kbd>}
+                <Icon icon={Sparkles} className="shrink-0 text-accent-ink" /><span className="min-w-0 truncate">Ask Copilot: “{text}”</span>{asks && <kbd className="ml-auto text-[11px] text-fg-3">Enter</kbd>}
               </button>
             </>
           )}

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { IconButton } from "@/components/ui/Button";
@@ -37,7 +38,7 @@ export function MicButton({ onText, onPhrase, size = "md", className, label = "D
         data-mic-unsupported=""
         onClick={() => toast("Voice dictation isn't available in this browser", { description: "Try Chrome, Edge or Safari, or use your keyboard's dictation key." })}
       >
-        <MicOff className={size === "sm" ? "size-4" : "size-[18px]"} />
+        <Icon icon={MicOff} size={size === "sm" ? "md" : "lg"} />
       </IconButton>
     );
   }
@@ -52,7 +53,7 @@ export function MicButton({ onText, onPhrase, size = "md", className, label = "D
         data-mic=""
         onClick={d.toggle}
       >
-        <Mic className={cn(size === "sm" ? "size-4" : "size-[18px]", d.listening && "animate-pulse")} />
+        <Icon icon={Mic} size={size === "sm" ? "md" : "lg"} className={d.listening ? "animate-pulse" : undefined} />
       </IconButton>
       {d.listening && (
         <span role="status" aria-live="polite" className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 max-w-[260px] truncate rounded-lg border border-line bg-surface px-2.5 py-1 text-[12px] text-fg-2 shadow-[var(--shadow)]">

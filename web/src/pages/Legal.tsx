@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Compass } from "lucide-react";
 import { Logo } from "@/components/ui/misc";
@@ -34,7 +35,7 @@ function LegalLayout({ title, children }: { title: string; children: ReactNode }
     <div className="dark min-h-full bg-[#08080b] text-fg">
       <header className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5">
         <Link to="/" aria-label="MailIQ home"><Logo /></Link>
-        <Link to="/" className="flex items-center gap-1.5 text-[13px] text-fg-2 hover:text-fg"><ArrowLeft className="size-4" /> Back</Link>
+        <Link to="/" className="flex items-center gap-1.5 text-[13px] text-fg-2 hover:text-fg"><Icon icon={ArrowLeft} /> Back</Link>
       </header>
       <main className="mx-auto max-w-3xl px-5 pb-20 pt-6">
         <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
@@ -344,7 +345,7 @@ export function TermsPage() {
 export function NotFoundPage() {
   return (
     <div className="dark flex min-h-full flex-col items-center justify-center gap-4 bg-[#08080b] px-6 text-center text-fg">
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-ink"><Compass className="size-6" /></span>
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-ink"><Icon icon={Compass} className="size-6" /></span>
       <h1 className="text-xl font-semibold">Page not found</h1>
       <p className="text-[14px] text-fg-3">The page you're looking for doesn't exist.</p>
       <Link to="/" className="rounded-lg bg-accent px-4 py-2 text-[14px] font-medium text-white">Go home</Link>

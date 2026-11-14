@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { singleKeysOff } from "@/lib/prefs";
 import { useSearchParams } from "react-router-dom";
 import {
-  AlertTriangle, Archive, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CornerUpLeft, Download, FileText, Forward, Image as ImageIcon,
+  Archive, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CornerUpLeft, Download, FileText, Forward, Image as ImageIcon, TriangleAlert,
   Inbox, Loader2, Mail, MailOpen, Maximize2, MoreHorizontal, Paperclip, Reply, ReplyAll, Send, ShieldAlert, Sparkles, Star, Tag, Trash2, Undo2, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { MessageDetail, ThreadAction, ThreadDetail } from "@shared/mail";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button, IconButton } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { SnoozeBanner, SnoozeMenu } from "./SnoozeMenu";
 import { ReadLaterButton } from "./ReadLaterButton";
@@ -27,6 +29,7 @@ import { useComposer } from "../composer/context";
 import { EmailBody } from "./EmailBody";
 import { AiSummary, useInsights } from "./AiSummary";
 import { SecurityBanner } from "./SecurityBanner";
+import { FOLDER_META } from "../nav";
 
 export interface ReaderProps {
   accountId?: string;
@@ -42,7 +45,7 @@ export function Reader({ accountId, threadId, position, onClose, onOpenCopilot, 
   if (!accountId || !threadId) {
     return (
       <EmptyState
-        icon={<Mail className="size-5" />}
+        icon={<Icon icon={Mail} size="lg" />}
         title="Select a conversation"
         description={<>Pick an email from the list to read it here. Press <kbd className="rounded border border-line px-1">j</kbd>/<kbd className="rounded border border-line px-1">k</kbd> to move, <kbd className="rounded border border-line px-1">c</kbd> to compose.</>}
       />
@@ -53,9 +56,9 @@ export function Reader({ accountId, threadId, position, onClose, onOpenCopilot, 
     const notFound = thread.error instanceof ApiError && thread.error.status === 404;
     return (
       <div className="flex h-full flex-col">
-        <div className="flex h-14 items-center border-b border-line px-3 lg:hidden"><IconButton label="Back" onClick={onClose}><ArrowLeft className="size-5" /></IconButton></div>
+        <div className="flex h-14 items-center border-b border-line px-3 lg:hidden"><IconButton label="Back" onClick={onClose}><Icon icon={ArrowLeft} size="lg" /></IconButton></div>
         <EmptyState
-          icon={<AlertTriangle className="size-5" />}
+          icon={<Icon icon={TriangleAlert} size="lg" />}
           title={notFound ? "This conversation is gone" : "Couldn't open this conversation"}
           description={notFound ? "It may have been deleted or moved in Gmail." : errorMessage(thread.error)}
           action={notFound ? <Button onClick={onClose}>Back to list</Button> : <Button onClick={() => void thread.refetch()}>Try again</Button>}
@@ -118,54 +121,54 @@ function ReaderBody({ thread, position, onClose, onOpenCopilot, folder }: { thre
 
   return (
     <article className="flex h-full min-h-0 flex-col" aria-label={`Conversation: ${thread.subject}`}>
-      <div className="flex h-14 shrink-0 items-center gap-0.5 border-b border-line px-2 sm:px-3">
-        <IconButton label="Back to list" onClick={onClose}><ArrowLeft className="size-[18px]" /></IconButton>
+      <div className="flex min-h-14 min-w-0 flex-wrap items-center gap-0.5 border-b border-line px-2 py-1 sm:px-3">
+        <IconButton label="Back to list" onClick={onClose}><Icon icon={ArrowLeft} size="lg" /></IconButton>
         <div className="mx-1 h-5 w-px bg-line" aria-hidden />
         {thread.inTrash ? (
-          <IconButton label="Restore from Trash" onClick={() => run("untrash", "Restored from Trash")}><Undo2 className="size-[18px]" /></IconButton>
+          <IconButton label="Restore from Trash" onClick={() => run("untrash", "Restored from Trash")}><Icon icon={Undo2} size="lg" /></IconButton>
         ) : thread.inInbox ? (
-          <IconButton label="Archive (e)" onClick={() => run("archive", "Conversation archived", true)}><Archive className="size-[18px]" /></IconButton>
+          <IconButton label="Archive (e)" onClick={() => run("archive", "Conversation archived", true)}><Icon icon={Archive} size="lg" /></IconButton>
         ) : (
-          <IconButton label="Move to Inbox" onClick={() => run("inbox", "Moved to Inbox")}><Inbox className="size-[18px]" /></IconButton>
+          <IconButton label="Move to Inbox" onClick={() => run("inbox", "Moved to Inbox")}><Icon icon={Inbox} size="lg" /></IconButton>
         )}
         <IconButton label={folder === "spam" ? "Not spam" : "Report spam"} onClick={() => run(folder === "spam" ? "notspam" : "spam", folder === "spam" ? "Moved to Inbox" : "Reported as spam", true)}>
-          <ShieldAlert className="size-[18px]" />
+          <Icon icon={ShieldAlert} size="lg" />
         </IconButton>
         {!thread.inTrash && (
-          <IconButton label="Delete (#)" onClick={() => setConfirmTrash(true)}><Trash2 className="size-[18px]" /></IconButton>
+          <IconButton label="Delete (#)" onClick={() => setConfirmTrash(true)}><Icon icon={Trash2} size="lg" /></IconButton>
         )}
-        <IconButton label="Mark as unread (u)" onClick={() => run("unread", "Marked as unread", true)}><MailOpen className="size-[18px]" /></IconButton>
+        <IconButton label="Mark as unread (u)" onClick={() => run("unread", "Marked as unread", true)}><Icon icon={MailOpen} size="lg" /></IconButton>
         {!thread.inTrash && <SnoozeMenu thread={thread} onSnoozed={() => (position?.next ? position.next() : onClose())} />}
         {!thread.inTrash && <ReadLaterButton thread={thread} />}
         <NoteButton thread={thread} onClick={() => setNoteEditing(true)} />
         <div className="mx-1 h-5 w-px bg-line" aria-hidden />
-        <IconButton label={thread.starred ? "Unstar (s)" : "Star (s)"} active={thread.starred} onClick={() => run(thread.starred ? "unstar" : "star")}>
-          <Star className={cn("size-[18px]", thread.starred && "text-amber-400")} fill={thread.starred ? "currentColor" : "none"} />
+        <IconButton label="Star (s)" aria-pressed={thread.starred} onClick={() => run(thread.starred ? "unstar" : "star")}>
+          <Icon icon={Star} size="lg" active={thread.starred} className={thread.starred ? "text-amber-400" : undefined} fill={thread.starred ? "currentColor" : "none"} />
         </IconButton>
         <LabelsMenu thread={thread} />
         <Menu>
-          <MenuTrigger asChild><IconButton label="More actions"><MoreHorizontal className="size-[18px]" /></IconButton></MenuTrigger>
+          <MenuTrigger asChild><IconButton label="More actions"><Icon icon={MoreHorizontal} size="lg" /></IconButton></MenuTrigger>
           <MenuContent>
-            <MenuItem icon={<Reply />} onSelect={() => composer.open({ mode: "reply", thread, message: last })}>Reply</MenuItem>
-            <MenuItem icon={<ReplyAll />} onSelect={() => composer.open({ mode: "replyAll", thread, message: last })}>Reply all</MenuItem>
-            <MenuItem icon={<Forward />} onSelect={() => composer.open({ mode: "forward", thread, message: last })}>Forward</MenuItem>
+            <MenuItem icon={<Icon icon={Reply} />} onSelect={() => composer.open({ mode: "reply", thread, message: last })}>Reply</MenuItem>
+            <MenuItem icon={<Icon icon={ReplyAll} />} onSelect={() => composer.open({ mode: "replyAll", thread, message: last })}>Reply all</MenuItem>
+            <MenuItem icon={<Icon icon={Forward} />} onSelect={() => composer.open({ mode: "forward", thread, message: last })}>Forward</MenuItem>
             <MenuSeparator />
-            <MenuItem icon={<Tag />} onSelect={() => run(thread.important ? "unimportant" : "important", thread.important ? "Marked not important" : "Marked important")}>
+            <MenuItem icon={<Icon icon={FOLDER_META.important.icon} />} onSelect={() => run(thread.important ? "unimportant" : "important", thread.important ? "Marked not important" : "Marked important")}>
               {thread.important ? "Mark not important" : "Mark important"}
             </MenuItem>
-            {aiOn && <MenuItem icon={<Sparkles />} onSelect={onOpenCopilot}>Ask Copilot about this</MenuItem>}
+            {aiOn && <MenuItem icon={<Icon icon={Sparkles} />} onSelect={onOpenCopilot}>Ask Copilot about this</MenuItem>}
           </MenuContent>
         </Menu>
         <div className="flex-1" />
         {position && position.total > 0 && (
           <div className="hidden items-center gap-1 text-[12px] text-fg-3 sm:flex">
             <span aria-live="polite">{position.index + 1} of {position.total}</span>
-            <IconButton label="Previous conversation (k)" size="sm" disabled={!position.prev} onClick={position.prev}><ChevronLeft className="size-4" /></IconButton>
-            <IconButton label="Next conversation (j)" size="sm" disabled={!position.next} onClick={position.next}><ChevronRight className="size-4" /></IconButton>
+            <IconButton label="Previous conversation (k)" size="sm" disabled={!position.prev} onClick={position.prev}><Icon icon={ChevronLeft} /></IconButton>
+            <IconButton label="Next conversation (j)" size="sm" disabled={!position.next} onClick={position.next}><Icon icon={ChevronRight} /></IconButton>
           </div>
         )}
         {aiOn && (
-          <Button size="sm" variant="ai" className="ml-1" icon={<Sparkles className="size-3.5" />} onClick={onOpenCopilot} title="Ask Copilot about this email (⌘J)" aria-label="Ask Copilot about this email">
+          <Button size="sm" variant="ai" className="ml-1" icon={<Icon icon={Sparkles} size="sm" />} onClick={onOpenCopilot} title="Ask Copilot about this email (⌘J)" aria-label="Ask Copilot about this email">
             <span className="hidden sm:inline">Ask Copilot</span>
           </Button>
         )}
@@ -264,7 +267,7 @@ function LabelsMenu({ thread }: { thread: ThreadDetail }) {
   const defs = labels.data?.accounts.find((a) => a.accountId === thread.accountId)?.labels ?? [];
   return (
     <Menu>
-      <MenuTrigger asChild><IconButton label="Labels"><Tag className="size-[18px]" /></IconButton></MenuTrigger>
+      <MenuTrigger asChild><IconButton label="Labels"><Icon icon={Tag} size="lg" /></IconButton></MenuTrigger>
       <MenuContent className="max-h-[60vh] overflow-y-auto">
         <MenuLabel>Label as</MenuLabel>
         {defs.length === 0 && <div className="px-2.5 py-2 text-[12.5px] text-fg-3">No labels yet. Create one from the sidebar.</div>}
@@ -316,7 +319,7 @@ function MessageCard({ m, thread, defaultOpen }: { m: MessageDetail; thread: Thr
           </div>
           <button type="button" onClick={() => setDetails((v) => !v)} className="mt-0.5 flex max-w-full items-center gap-1 text-left text-[12.5px] text-fg-3 hover:text-fg-2" aria-expanded={details}>
             <span className="truncate">{m.from.email} → to: {toLine}{m.cc.length ? `, cc: ${m.cc.map(displayName).join(", ")}` : ""}</span>
-            <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", details && "rotate-180")} aria-hidden />
+            <Icon icon={ChevronDown} size="sm" className={cn("shrink-0 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", details && "rotate-180")} />
           </button>
           {details && (
             <dl className="animate-reveal mt-2 grid grid-cols-[60px_1fr] gap-x-3 gap-y-1 rounded-lg bg-surface-2 p-3 text-[12.5px]">
@@ -332,17 +335,17 @@ function MessageCard({ m, thread, defaultOpen }: { m: MessageDetail; thread: Thr
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           <time className="mr-1 hidden text-[12px] text-fg-3 md:inline" dateTime={m.date}>{fullDate(m.date)} ({relative(m.date)})</time>
-          <IconButton label="Reply" size="sm" onClick={() => composer.open({ mode: "reply", thread, message: m })}><CornerUpLeft className="size-4" /></IconButton>
+          <IconButton label="Reply" size="sm" onClick={() => composer.open({ mode: "reply", thread, message: m })}><Icon icon={CornerUpLeft} /></IconButton>
           <Menu>
-            <MenuTrigger asChild><IconButton label="Message actions" size="sm"><MoreHorizontal className="size-4" /></IconButton></MenuTrigger>
+            <MenuTrigger asChild><IconButton label="Message actions" size="sm"><Icon icon={MoreHorizontal} /></IconButton></MenuTrigger>
             <MenuContent>
-              <MenuItem icon={<Reply />} onSelect={() => composer.open({ mode: "reply", thread, message: m })}>Reply</MenuItem>
-              <MenuItem icon={<ReplyAll />} onSelect={() => composer.open({ mode: "replyAll", thread, message: m })}>Reply all</MenuItem>
-              <MenuItem icon={<Forward />} onSelect={() => composer.open({ mode: "forward", thread, message: m })}>Forward</MenuItem>
+              <MenuItem icon={<Icon icon={Reply} />} onSelect={() => composer.open({ mode: "reply", thread, message: m })}>Reply</MenuItem>
+              <MenuItem icon={<Icon icon={ReplyAll} />} onSelect={() => composer.open({ mode: "replyAll", thread, message: m })}>Reply all</MenuItem>
+              <MenuItem icon={<Icon icon={Forward} />} onSelect={() => composer.open({ mode: "forward", thread, message: m })}>Forward</MenuItem>
             </MenuContent>
           </Menu>
           {thread.messages.length > 1 && (
-            <IconButton label="Collapse message" size="sm" onClick={() => setOpen(false)}><ChevronDown className="size-4 rotate-180" /></IconButton>
+            <IconButton label="Collapse message" size="sm" onClick={() => setOpen(false)}><Icon icon={ChevronDown} className="rotate-180" /></IconButton>
           )}
         </div>
       </div>
@@ -358,7 +361,7 @@ function MessageCard({ m, thread, defaultOpen }: { m: MessageDetail; thread: Thr
 function AttachmentList({ accountId, files }: { accountId: string; files: MessageDetail["attachments"] }) {
   return (
     <div className="mt-4">
-      <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-fg-3"><Paperclip className="size-3.5" aria-hidden />{files.length} attachment{files.length > 1 ? "s" : ""}</p>
+      <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-fg-3"><Icon icon={Paperclip} size="sm" />{files.length} attachment{files.length > 1 ? "s" : ""}</p>
       <ul className="flex flex-wrap gap-2">
         {files.map((a) => (
           <li key={a.attachmentId + a.filename}>
@@ -369,13 +372,13 @@ function AttachmentList({ accountId, files }: { accountId: string; files: Messag
               aria-label={`Download ${a.filename} (${formatBytes(a.size)})`}
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-ink">
-                {a.mimeType.startsWith("image/") ? <ImageIcon className="size-4" /> : <FileText className="size-4" />}
+                {a.mimeType.startsWith("image/") ? <Icon icon={ImageIcon} /> : <Icon icon={FileText} />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[12.5px] font-medium text-fg">{a.filename}</span>
                 <span className="block text-[11.5px] text-fg-3">{formatBytes(a.size)}</span>
               </span>
-              <Download className="size-4 text-fg-3 group-hover:text-fg" aria-hidden />
+              <Icon icon={Download} className="text-fg-3 group-hover:text-fg" />
             </a>
           </li>
         ))}
@@ -502,7 +505,7 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
     <div className="space-y-3 pt-2">
       {aiOn && (smart || loadingSmart) && (
         <div data-testid="reply-suggestions">
-          <p className="mb-2 flex items-center gap-1.5 text-[12px] text-fg-3"><Sparkles className="size-3.5 text-ai-title" aria-hidden /> Suggested replies, tap one to edit it, nothing is sent until you press Send</p>
+          <p className="mb-2 flex items-center gap-1.5 text-[12px] text-fg-3"><Icon icon={Sparkles} size="sm" className="text-ai-title" /> Suggested replies, tap one to edit it, nothing is sent until you press Send</p>
           {loadingSmart && !smart ? (
             <div className="grid gap-2 sm:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
           ) : smart && smart.length > 0 ? (
@@ -549,7 +552,7 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
             )}
             {aiOn && (
               <button type="button" onClick={() => void generate()} disabled={generating} className="flex shrink-0 items-center gap-1.5 font-medium text-ai-title hover:brightness-125 disabled:opacity-50">
-                {generating ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Wand2 className="size-3.5" aria-hidden />}
+                {generating ? <Icon icon={Loader2} size="sm" className="animate-spin" /> : <Icon icon={Wand2} size="sm" />}
                 {generating ? "Writing…" : "Generate quick reply"}
               </button>
             )}
@@ -565,28 +568,37 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
             placeholder={aiOn ? "Write a reply… or type an instruction and press Generate" : "Write a reply…"}
             className="block w-full resize-none bg-transparent px-4 py-2 text-[13.5px] text-fg placeholder:text-fg-3 outline-none"
           />
-          {isAi && <p className="px-4 text-[11.5px] text-ai-title">✦ Written with AI — review before sending.</p>}
+          {isAi && (
+            <p className="flex items-center gap-1.5 px-4 text-[11.5px] text-ai-title">
+              <Icon icon={Sparkles} size="sm" />
+              Written with AI — review before sending.
+            </p>
+          )}
           <div className="flex items-center gap-1 px-2 pb-2">
             <IconButton
               label="Open full composer (attachments, formatting, CC/BCC)"
               size="sm"
               onClick={() => { composer.open({ mode: "reply", thread, message, bodyText: text, aiGenerated: isAi }); setText(""); setAiText(null); }}
             >
-              <Maximize2 className="size-4" />
+              <Icon icon={Maximize2} />
             </IconButton>
             <IconButton label="Attach files" size="sm" onClick={() => { composer.open({ mode: "reply", thread, message, bodyText: text, aiGenerated: isAi }); setText(""); setAiText(null); }}>
-              <Paperclip className="size-4" />
+              <Icon icon={Paperclip} />
             </IconButton>
             <div className="flex-1" />
             <span className="hidden text-[11px] text-fg-3 sm:inline">⌘/Ctrl + Enter</span>
-            <button
-              type="submit"
-              aria-label="Send reply"
-              disabled={!text.trim() || sending}
-              className="ml-2 flex size-8 items-center justify-center rounded-full bg-accent text-white transition-[filter] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:brightness-110 disabled:opacity-40"
-            >
-              <Send className="size-4" />
-            </button>
+            <Tooltip content="Send reply">
+              <button
+                type="submit"
+                aria-label="Send reply"
+                disabled={!text.trim() || sending}
+                aria-busy={sending || undefined}
+                className="ml-2 flex size-8 items-center justify-center rounded-full bg-accent text-white transition-[filter] duration-[var(--duration-fast)] ease-[var(--ease-out)] pointer-coarse:size-11 hover:brightness-110 disabled:opacity-40"
+              >
+                <Icon icon={Send} />
+                {sending && <span className="sr-only">Loading…</span>}
+              </button>
+            </Tooltip>
           </div>
         </form>
       </div>
@@ -608,8 +620,9 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
 function ReaderSkeleton({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col" aria-busy="true" aria-label="Loading conversation">
+      <span className="sr-only">Loading…</span>
       <div className="flex h-14 items-center gap-2 border-b border-line px-3">
-        <IconButton label="Back to list" onClick={onClose}><ArrowLeft className="size-[18px]" /></IconButton>
+        <IconButton label="Back to list" onClick={onClose}><Icon icon={ArrowLeft} size="lg" /></IconButton>
         <Skeleton className="h-6 w-40" />
       </div>
       <div className="mx-auto w-full max-w-[860px] space-y-5 px-8 pt-6">

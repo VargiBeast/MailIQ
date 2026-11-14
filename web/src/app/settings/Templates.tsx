@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { toast } from "sonner";
 import { FileStack, Pencil, Plus, Trash2 } from "lucide-react";
 import type { Template } from "@shared/templates";
@@ -23,7 +24,7 @@ export function TemplatesSection() {
           <h2 className="text-[14.5px] font-semibold text-fg">Templates</h2>
           <p className="mt-0.5 text-[12.5px] text-fg-3">Saved replies you can insert in the composer from the Templates button or with <Kbd>{TEMPLATE_SHORTCUT_LABEL}</Kbd>. Up to {TEMPLATE_LIMITS.maxPerUser}.</p>
         </div>
-        <Button size="sm" variant="primary" icon={<Plus className="size-3.5" />} onClick={() => setEditing({})} disabled={list.length >= TEMPLATE_LIMITS.maxPerUser}>New template</Button>
+        <Button size="sm" variant="primary" icon={<Icon icon={Plus} size="sm" />} onClick={() => setEditing({})} disabled={list.length >= TEMPLATE_LIMITS.maxPerUser}>New template</Button>
       </div>
       <div className="px-5 py-3">
         {q.isLoading ? (
@@ -32,7 +33,7 @@ export function TemplatesSection() {
           <p className="py-3 text-[13px] text-danger">{errorMessage(q.error)}</p>
         ) : list.length === 0 ? (
           <div className="py-6 text-center text-[13px] text-fg-3">
-            <FileStack className="mx-auto mb-2 size-5 text-accent-400" aria-hidden />
+            <Icon icon={FileStack} size="lg" className="mx-auto mb-2 text-accent-400" />
             No templates yet.
           </div>
         ) : (
@@ -43,8 +44,8 @@ export function TemplatesSection() {
                   <p className="truncate text-[13.5px] font-medium text-fg">{t.name}</p>
                   <p className="truncate text-[12.5px] text-fg-3">{t.subject ? `${t.subject} — ` : ""}{t.body.replace(/\s+/g, " ")}</p>
                 </div>
-                <IconButton label={`Edit ${t.name}`} size="sm" onClick={() => setEditing(t)}><Pencil className="size-4" /></IconButton>
-                <IconButton label={`Delete ${t.name}`} size="sm" onClick={() => setDeleting(t)}><Trash2 className="size-4" /></IconButton>
+                <IconButton label={`Edit ${t.name}`} size="sm" onClick={() => setEditing(t)}><Icon icon={Pencil} /></IconButton>
+                <IconButton label={`Delete ${t.name}`} size="sm" onClick={() => setDeleting(t)}><Icon icon={Trash2} /></IconButton>
               </li>
             ))}
           </ul>

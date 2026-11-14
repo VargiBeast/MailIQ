@@ -115,6 +115,19 @@ function PaletteHost() {
   return <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />;
 }
 
+/** A hidden or minimized composer still has a dialog role in the DOM; it must not swallow shortcuts. */
+function shortcutBlockedByDialog() {
+  for (const el of document.querySelectorAll<HTMLElement>("[role=dialog]")) {
+    if (el.hidden || el.closest("[hidden]")) continue;
+    if (el.getAttribute("aria-hidden") === "true") continue;
+    if (el.dataset.minimized != null) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") continue;
+    return true;
+  }
+  return false;
+}
+
 function useGlobalShortcuts() {
   const navigate = useNavigate();
   const composer = useComposer();
@@ -124,7 +137,7 @@ function useGlobalShortcuts() {
       if (singleKeysOff(e)) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
-      if (e.metaKey || e.ctrlKey || e.altKey || document.querySelector("[role=dialog]")) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || shortcutBlockedByDialog()) return;
       if (pendingG.current && Date.now() - pendingG.current < 1200) {
         pendingG.current = 0;
         const dest = { i: "/app/inbox", o: "/app/overview", s: "/app/starred", d: "/app/drafts", t: "/app/sent" }[e.key];

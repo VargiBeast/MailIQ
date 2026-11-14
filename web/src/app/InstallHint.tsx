@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { X } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/cn";
 import { usePrefersReducedMotion } from "@/lib/motion";
 
@@ -58,14 +60,16 @@ export function InstallHint() {
       >
         Install
       </button>
-      <button
-        type="button"
-        aria-label="Dismiss"
-        className="shrink-0 rounded-md p-1 text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2"
-        onClick={dismiss}
-      >
-        <X className="size-4" />
-      </button>
+      <Tooltip content="Dismiss">
+        <button
+          type="button"
+          aria-label="Dismiss"
+          className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+          onClick={dismiss}
+        >
+          <Icon icon={X} />
+        </button>
+      </Tooltip>
     </div>
   );
 }

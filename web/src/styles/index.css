@@ -2,6 +2,7 @@
 @import "@fontsource-variable/inter";
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant pointer-coarse (@media (pointer: coarse));
 
 /*
   MailIQ design tokens — Premium Futuristic Minimalism.
@@ -526,6 +527,7 @@ body[data-selecting] [data-mobile-nav] { display: none; }
 
 /* Composer dock ↔ maximize. Same inset lengths in both states so the change can interpolate. */
 .composer-panel {
+  inset: 0;
   transition-property: width, height, right, bottom, opacity;
   transition-duration: var(--duration-slow);
   transition-timing-function: var(--ease-out);
@@ -538,6 +540,7 @@ body[data-selecting] [data-mobile-nav] { display: none; }
     bottom: 1rem;
     width: min(640px, calc(100vw - 2rem));
     height: min(640px, calc(100dvh - 32px));
+    border-radius: var(--radius-xl);
   }
   .composer-panel[data-maximized] {
     right: 1.5rem;

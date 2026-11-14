@@ -1,5 +1,7 @@
 import * as DM from "@radix-ui/react-dropdown-menu";
 import type { ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export const Menu = DM.Root;
@@ -55,7 +57,7 @@ export function MenuItem({
         danger ? "text-danger data-[highlighted]:bg-danger/10" : "text-fg-2 data-[highlighted]:text-fg",
       )}
     >
-      {icon && <span className="text-fg-3 [&_svg]:size-4">{icon}</span>}
+      {icon && <span className="inline-flex shrink-0 text-fg-3">{icon}</span>}
       {children}
     </DM.Item>
   );
@@ -88,11 +90,7 @@ export function MenuCheckbox({
         )}
         aria-hidden
       >
-        {checked && (
-          <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
-            <path d="M2.5 6.5l2.2 2.2 4.8-5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-          </svg>
-        )}
+        {checked && <Icon icon={Check} size="xs" active />}
       </span>
       {children}
     </DM.CheckboxItem>
