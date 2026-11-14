@@ -13,6 +13,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LandingPage } from "@/pages/Landing";
 import { NotFoundPage, PrivacyPage, TermsPage } from "@/pages/Legal";
 import { analyticsBeforeSend } from "@/lib/analytics";
+import { TOOLTIP_DELAY_MS } from "@/lib/motion";
 
 const AppRoutes = lazy(() => import("@/app/AppRoutes"));
 
@@ -29,14 +30,28 @@ const queryClient = new QueryClient({
 function ThemedToaster() {
   const { session } = useSession();
   const theme = session?.settings?.appearance.theme ?? "dark";
-  return <Toaster theme={theme} position="bottom-right" richColors closeButton />;
+  return (
+    <Toaster
+      theme={theme}
+      position="bottom-right"
+      richColors
+      closeButton
+      toastOptions={{
+        classNames: { toast: "motion-toast" },
+        style: {
+          transitionDuration: "var(--duration-normal)",
+          transitionTimingFunction: "var(--ease-out)",
+        },
+      }}
+    />
+  );
 }
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <Tooltip.Provider delayDuration={400}>
+      <Tooltip.Provider delayDuration={TOOLTIP_DELAY_MS}>
         <SessionProvider>
           <BrowserRouter>
             <Routes>

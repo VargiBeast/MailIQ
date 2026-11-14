@@ -24,12 +24,12 @@ export function Dialog({
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] animate-in" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out" />
         <RD.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-32px)] w-[calc(100vw-24px)] -translate-x-1/2 -translate-y-1/2",
             "overflow-auto rounded-[var(--radius-xl)] border border-line-strong bg-surface p-5",
-            "shadow-[var(--shadow-lg)] animate-scale-in scroll-thin",
+            "shadow-[var(--shadow-lg)] scroll-thin data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
             wide ? "max-w-2xl" : "max-w-md",
             className,
           )}
