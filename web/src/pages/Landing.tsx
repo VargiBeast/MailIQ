@@ -43,7 +43,7 @@ export function LandingPage() {
   const deleted = params.get("deleted") === "1";
   const next = params.get("next");
   if (loading) return <Splash />;
-  if (session?.user && !error) return <Icon icon={Navigate} to={next && next.startsWith("/app") ? next : "/app"} replace />;
+  if (session?.user && !error) return <Navigate to={next && next.startsWith("/app") ? next : "/app"} replace />;
   const googleReady = config?.google !== false;
   const signInHref = `/api/auth/google/start${next && next.startsWith("/app") ? `?next=${encodeURIComponent(next)}` : ""}`;
 

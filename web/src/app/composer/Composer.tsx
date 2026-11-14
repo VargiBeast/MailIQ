@@ -14,7 +14,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { ConfirmDialog, Dialog } from "@/components/ui/Dialog";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { Textarea } from "@/components/ui/Field";
-import { cn } from "@/lib/cn";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { sendWithUndo } from "@/lib/undoSend";
@@ -34,17 +34,20 @@ import { useMediaQuery } from "@/lib/useMediaQuery";
 const MAX_TOTAL = 3_500_000;
 
 /** Full-screen mobile composer: keep focus inside and mark the rest of the shell inert. */
-function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | null>) {
+function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | null>, restoreTo: RefObject<HTMLElement | null>) {
   useEffect(() => {
     if (!active) return;
     const node = ref.current;
     if (!node) return;
+    const previous = document.activeElement;
+    if (previous instanceof HTMLElement && !node.contains(previous)) restoreTo.current = previous;
     const parent = node.parentElement;
     const inerted: HTMLElement[] = [];
     if (parent) {
       for (const child of Array.from(parent.children)) {
         if (child === node || !(child instanceof HTMLElement) || child.hasAttribute("inert")) continue;
         child.setAttribute("inert", "");
+        child.setAttribute("data-composer-inert", "");
         inerted.push(child);
       }
     }
@@ -76,9 +79,15 @@ function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | nu
     if (!node.contains(document.activeElement)) focusable()[0]?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
-      for (const el of inerted) el.removeAttribute("inert");
+      for (const el of inerted) {
+        el.removeAttribute("inert");
+        el.removeAttribute("data-composer-inert");
+      }
+      const back = restoreTo.current;
+      restoreTo.current = null;
+      if (back?.isConnected) back.focus();
     };
-  }, [active, ref]);
+  }, [active, ref, restoreTo]);
 }
 
 export function ComposerHost() {
@@ -184,12 +193,18 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
   const [confirmAi, setConfirmAi] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [undoHtml, setUndoHtml] = useState<string | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [saveTemplate, setSaveTemplate] = useState<Partial<Template> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const reducedMotion = usePrefersReducedMotion();
   const aiOn = Boolean(config?.ai) && session?.settings?.ai.enabled !== false;
   const signature = session?.settings?.ai.signature ?? "";
 
@@ -260,8 +275,51 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       const ok = await saveDraft(true);
       if (ok) toast("Draft saved", { description: "Find it in Drafts." });
     }
-    onClose();
+    beginClose();
   };
+
+  const focusRestoreRef = useRef<HTMLElement | null>(null);
+  const beginClose = () => {
+    if (closingRef.current) return;
+    document.querySelectorAll<HTMLElement>("[data-composer-inert]").forEach((el) => {
+      el.removeAttribute("inert");
+      el.removeAttribute("data-composer-inert");
+    });
+    const back = focusRestoreRef.current;
+    focusRestoreRef.current = null;
+    if (back?.isConnected) back.focus();
+    if (reducedMotion || panelRef.current?.hidden) {
+      onClose();
+      return;
+    }
+    closingRef.current = true;
+    setClosing(true);
+  };
+
+  useEffect(() => {
+    if (!closing) return;
+    const el = panelRef.current;
+    if (!el) {
+      onCloseRef.current();
+      return;
+    }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      onCloseRef.current();
+    };
+    const onEnd = (e: AnimationEvent) => {
+      if (e.target !== el || e.animationName !== "scale-out") return;
+      finish();
+    };
+    el.addEventListener("animationend", onEnd);
+    const timer = window.setTimeout(finish, 480);
+    return () => {
+      el.removeEventListener("animationend", onEnd);
+      window.clearTimeout(timer);
+    };
+  }, [closing]);
 
   const discard = async () => {
     setConfirmDiscard(false);
@@ -275,7 +333,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       }
     }
     toast("Draft discarded");
-    onClose();
+    beginClose();
   };
 
   const send = async (aiConfirmed: boolean) => {
@@ -380,14 +438,13 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
 
   const title = mode === "reply" || mode === "replyAll" ? "Reply" : mode === "forward" ? "Forward" : mode === "draft" ? "Draft" : "New message";
   const accountEmail = accounts.find((a) => a.id === accountId)?.email;
-  const rootRef = useRef<HTMLDivElement>(null);
   const narrow = useMediaQuery("(max-width: 639px)");
-  const modal = narrow && !hidden;
-  useMobileComposerGuard(modal, rootRef);
+  const modal = narrow && !hidden && !closing;
+  useMobileComposerGuard(modal, panelRef, focusRestoreRef);
 
   return (
     <div
-      ref={rootRef}
+      ref={panelRef}
       role={hidden ? undefined : "dialog"}
       data-composer=""
       data-minimized={hidden ? "" : undefined}
@@ -396,13 +453,8 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       aria-modal={hidden ? undefined : modal}
       hidden={hidden}
       onKeyDown={onKeyDown}
-      className={cn(
-        "fixed z-40 flex flex-col overflow-hidden border border-line-strong bg-surface shadow-[var(--shadow-lg)] animate-scale-in",
-        "inset-0 sm:inset-auto",
-        maximized
-          ? "sm:inset-6 sm:rounded-[var(--radius-xl)]"
-          : "sm:bottom-4 sm:right-4 sm:h-[min(640px,calc(100dvh-32px))] sm:w-[min(640px,calc(100vw-2rem))] sm:rounded-[var(--radius-xl)]",
-      )}
+      data-closing={closing ? "" : undefined}
+      className="composer-panel fixed z-40 flex flex-col overflow-hidden border border-line-strong bg-surface shadow-[var(--shadow-lg)] animate-scale-in"
     >
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-4">
         <h2 className="flex-1 text-[14px] font-semibold text-fg">{subject || title}</h2>
@@ -459,7 +511,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
             <span className="flex-1">Drafted from your voice command. It's saved in Drafts and won't be sent unless you press Send.</span>
           </div>
         )}
-        <Icon icon={EditorContent} editor={editor} />
+        <EditorContent editor={editor} />
         {init.quote && (
           <div className="px-4 pb-3">
             <button type="button" onClick={(e) => { e.stopPropagation(); setIncludeQuote((v) => !v); }} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-pressed={includeQuote}>
@@ -492,7 +544,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
         <MicButton onText={(t) => editor?.chain().focus().insertContent({ type: "text", text: `${t} ` }).run()} />
         {aiOn && (
           <>
-            <Button variant="ai" size="md" icon={<Icon icon={Sparkles} size="sm" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
+            <Button variant="ai" size="md" aria-busy={aiBusy || undefined} icon={aiBusy ? <><Icon icon={Loader2} size="sm" className="animate-spin" /><span className="sr-only">Loading…</span></> : <Icon icon={Sparkles} size="sm" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
             <Menu>
               <MenuTrigger asChild>
                 <Button variant="ghost" size="md" loading={aiBusy} icon={<Icon icon={Wand2} size="sm" />}>

@@ -117,7 +117,7 @@ export function DailyBriefCard({ compact = false }: { compact?: boolean }) {
           <button type="button" className="flex min-w-0 flex-1 items-center gap-1.5 self-stretch text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
             <span className="sr-only">Daily brief: </span>
             <span className="min-w-0 truncate text-[13px] text-fg-2">{b.headline ?? (empty ? "Nothing needs your attention right now." : "Here's what matters today.")}</span>
-            <Icon icon={ChevronDown} className={cn(" shrink-0 text-fg-3 transition-transform", open && "rotate-180")} />
+            <Icon icon={ChevronDown} className={cn("shrink-0 text-fg-3 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", open && "rotate-180")} />
           </button>
           {open && b.aiStatus === "ok" && (
             <IconButton label="Regenerate brief" size="sm" onClick={() => void refresh()} disabled={refreshing}>
@@ -143,9 +143,9 @@ export function DailyBriefCard({ compact = false }: { compact?: boolean }) {
           )}
         </div>
       )}
-      {compact && open && counts && <p className="-mt-1 px-4 pb-2 pl-10 text-[12px] text-fg-3">{counts}</p>}
+      {compact && open && counts && <p className="animate-reveal -mt-1 px-4 pb-2 pl-10 text-[12px] text-fg-3">{counts}</p>}
       {open && !empty && (
-        <div className={cn("grid gap-4 border-t border-[var(--ai-border)] px-4 py-3", !compact && "md:grid-cols-3")}>
+        <div className={cn("animate-reveal grid gap-4 border-t border-[var(--ai-border)] px-4 py-3", !compact && "md:grid-cols-3")}>
           <BriefList title="Most important" icon={<Icon icon={Star} size="sm" />} items={b.important} max={compact ? 3 : undefined} />
           <BriefList title="Awaiting your reply" icon={<Icon icon={MessageSquareReply} size="sm" />} items={b.awaitingReply} max={compact ? 3 : undefined} />
           <div>

@@ -56,7 +56,8 @@ export function Tooltip({
           sideOffset={6}
           className={cn(
             "z-[60] max-w-xs rounded-[var(--radius-sm)] border border-line-strong bg-surface px-2.5 py-1.5",
-            "text-[12px] leading-snug text-fg shadow-[var(--shadow-md)] animate-scale-in",
+            "origin-[var(--radix-tooltip-content-transform-origin)] text-[12px] leading-snug text-fg shadow-[var(--shadow-md)]",
+            "data-[state=delayed-open]:animate-scale-in data-[state=instant-open]:animate-scale-in data-[state=closed]:animate-scale-out",
           )}
         >
           {content}

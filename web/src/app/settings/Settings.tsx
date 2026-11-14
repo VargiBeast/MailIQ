@@ -59,9 +59,9 @@ export function SettingsPage() {
   const location = useLocation();
   const sections = useSections();
   if (!section) return <SettingsIndex />;
-  if (MOVED[section]) return <Icon icon={Navigate} to={MOVED[section] + (MOVED[section].includes("#") ? "" : location.search)} replace />;
+  if (MOVED[section]) return <Navigate to={MOVED[section] + (MOVED[section].includes("#") ? "" : location.search)} replace />;
   const meta = sections.find((s) => s.id === section);
-  if (!meta) return <Icon icon={Navigate} to="/app/settings/general" replace />;
+  if (!meta) return <Navigate to="/app/settings/general" replace />;
   return (
     <div className="flex h-full min-h-0">
       <nav aria-label="Settings sections" className="hidden w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 scroll-thin lg:flex">
@@ -137,7 +137,7 @@ function AccountLink({ compact = false }: { compact?: boolean }) {
 function SettingsIndex() {
   const sections = useSections();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  if (isDesktop) return <Icon icon={Navigate} to="/app/settings/general" replace />;
+  if (isDesktop) return <Navigate to="/app/settings/general" replace />;
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-14 shrink-0 items-center gap-2 px-3">
