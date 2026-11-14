@@ -421,9 +421,14 @@ body[data-selecting] [data-mobile-nav] { display: none; }
   pointer-events: none;
 }
 
-/* Copilot replies: fade paragraphs/blocks in sequence. Not token streaming. */
+/* Copilot replies: fade paragraphs/blocks in sequence. Not token streaming.
+   opacity + translate only — never a layout property. */
+@keyframes reply-in {
+  from { opacity: 0; translate: 0 4px; }
+  to { opacity: 1; translate: none; }
+}
 .reply-stagger > * {
-  animation: fade-in var(--duration-slow) var(--ease-out) both;
+  animation: reply-in var(--duration-slow) var(--ease-out) both;
 }
 .reply-stagger > *:nth-child(2) { animation-delay: calc(var(--duration-fast) * 0.5); }
 .reply-stagger > *:nth-child(3) { animation-delay: var(--duration-fast); }
@@ -434,7 +439,7 @@ body[data-selecting] [data-mobile-nav] { display: none; }
 /*
   Copilot dock ↔ expand. Enter/exit is transform/opacity via data-state animations.
   The size change interpolates insets (lengths on both states) because scaling the
-  panel would resize the type. Reduced motion is covered by the global rule.
+  panel would resize the type. Reduced motion turns that transition off below.
 */
 .copilot-panel {
   top: 0;
@@ -491,6 +496,20 @@ body[data-selecting] [data-mobile-nav] { display: none; }
 }
 .composer-panel[data-closing] {
   animation: fade-scale-out var(--duration-normal) var(--ease-out) both;
+}
+
+/* Layout transitions fully off (not merely 0.01ms). The global rule does not
+   clear animation-delay, so a fill of "both" would keep later reply blocks
+   invisible for the stagger delay. reply-stagger is the only delayed animation
+   added in this section. */
+@media (prefers-reduced-motion: reduce) {
+  .copilot-panel,
+  .composer-panel {
+    transition: none;
+  }
+  .reply-stagger > * {
+    animation-delay: 0s !important;
+  }
 }
 
 /* Sonner: match motion tokens. Position offsets stay in the rules below. */
