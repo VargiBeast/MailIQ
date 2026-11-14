@@ -19,6 +19,8 @@ import { Button, IconButton } from "@/components/ui/Button";
 import { Field, Input, Switch, Textarea } from "@/components/ui/Field";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { Kbd, Skeleton } from "@/components/ui/misc";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import { SidebarContext } from "../AppLayout";
 import { LabelsFiltersSection } from "./LabelsFilters";
 import { TemplatesSection } from "./Templates";
@@ -61,12 +63,17 @@ export function SettingsPage() {
   if (!meta) return <Navigate to="/app/settings/general" replace />;
   return (
     <div className="flex h-full min-h-0">
-      <nav aria-label="Settings sections" className="hidden w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 scroll-thin md:flex">
+      <nav aria-label="Settings sections" className="hidden w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 scroll-thin lg:flex">
         <h2 className="px-3 pb-2 text-[20px] font-semibold text-fg">Settings</h2>
         <AccountLink compact />
         {sections.map((s) => (
-          <NavLink key={s.id} to={`/app/settings/${s.id}`} className={({ isActive }) => cn("flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-[13.5px] transition-colors duration-[var(--duration-fast)]", isActive ? "bg-accent-soft font-medium text-fg ring-1 ring-inset ring-[var(--ai-border)]" : "text-fg-2 hover:bg-surface-2 hover:text-fg")}>
-            <s.icon className="size-4 text-fg-3" aria-hidden />{s.label}
+          <NavLink key={s.id} to={`/app/settings/${s.id}`} className={({ isActive }) => cn("flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-[13.5px] transition-colors duration-[var(--duration-fast)] pointer-coarse:min-h-11", isActive ? "bg-accent-soft font-medium text-fg ring-1 ring-inset ring-[var(--ai-border)]" : "text-fg-2 hover:bg-surface-2 hover:text-fg")}>
+            {({ isActive }) => (
+              <>
+                <s.icon className="size-4 text-fg-3" strokeWidth={isActive ? 2.25 : 1.75} aria-hidden />
+                {s.label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
@@ -86,8 +93,8 @@ export function SettingsPage() {
 export function PageHeader({ title, onBack }: { title: string; onBack?: () => void }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 px-3 md:px-8">
-      {onBack && <IconButton label="Back to settings" className="md:hidden" onClick={onBack}><ArrowLeft className="size-5" /></IconButton>}
-      <IconButton label="Open navigation" className={onBack ? "max-md:hidden lg:hidden" : "lg:hidden"} onClick={() => SidebarContext.open()}><Menu className="size-5" /></IconButton>
+      {onBack && <IconButton label="Back to settings" className="lg:hidden" onClick={onBack}><ArrowLeft className="size-5" strokeWidth={1.75} aria-hidden /></IconButton>}
+      {!onBack && <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Menu className="size-5" strokeWidth={1.75} aria-hidden /></IconButton>}
       <h1 className="min-w-0 flex-1 truncate text-[18px] font-semibold text-fg">{title}</h1>
       <SavedIndicator />
     </header>
@@ -128,7 +135,7 @@ function AccountLink({ compact = false }: { compact?: boolean }) {
 
 function SettingsIndex() {
   const sections = useSections();
-  const isDesktop = typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
   if (isDesktop) return <Navigate to="/app/settings/general" replace />;
   return (
     <div className="flex h-full flex-col">
@@ -450,7 +457,9 @@ function PrivacySection() {
               {s.ai.excludedSenders.map((x) => (
                 <li key={x} className="inline-flex h-7 items-center gap-1 rounded-full border border-line bg-surface-2 pl-3 pr-1 text-[12.5px] text-fg">
                   {x}
-                  <button type="button" aria-label={`Remove ${x}`} className="rounded-full p-1 text-fg-3 hover:bg-surface-3 hover:text-fg" onClick={() => update.mutate({ ai: { excludedSenders: s.ai.excludedSenders.filter((y) => y !== x) } })}><X className="size-3" /></button>
+                  <Tooltip content={`Remove ${x}`}>
+                    <button type="button" aria-label={`Remove ${x}`} className="inline-flex items-center justify-center rounded-full p-1 text-fg-3 hover:bg-surface-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={() => update.mutate({ ai: { excludedSenders: s.ai.excludedSenders.filter((y) => y !== x) } })}><X className="size-3" strokeWidth={1.75} aria-hidden /></button>
+                  </Tooltip>
                 </li>
               ))}
             </ul>

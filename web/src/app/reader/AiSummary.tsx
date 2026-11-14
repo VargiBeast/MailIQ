@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, CircleHelp, Gavel, ShieldOff, Sparkles, UserRound } from "lucide-react";
-import { useState } from "react";
+import { CalendarClock, CheckCircle2, CircleHelp, Gavel, ShieldOff, Sparkles, TriangleAlert, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { ThreadDetail } from "@shared/mail";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { Skeleton } from "@/components/ui/misc";
 import { Button } from "@/components/ui/Button";
 import { displayName } from "@/lib/format";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 export interface Insights {
   summary: string;
@@ -39,7 +40,11 @@ export function AiSummary({ thread, insights, autoEnabled, onRequest }: {
 }) {
   const { config, session } = useSession();
   // Collapsed by default on small screens; desktop can auto-show body when data exists.
-  const [expanded, setExpanded] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches);
+  const desktop = useMediaQuery("(min-width: 1024px)");
+  const [expanded, setExpanded] = useState(desktop);
+  useEffect(() => {
+    setExpanded(desktop);
+  }, [desktop]);
 
   const lastOther = [...thread.messages].reverse().find((m) => !m.isFromMe) ?? thread.messages[thread.messages.length - 1];
   const title = `Summary of ${lastOther ? displayName(lastOther.from) : "this"}’s email`;
@@ -72,6 +77,7 @@ export function AiSummary({ thread, insights, autoEnabled, onRequest }: {
     return (
       <Block title={title} busy>
         <div className="space-y-2" aria-label="Generating summary">
+          <span className="sr-only">Loading…</span>
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-11/12" />
           <Skeleton className="h-3 w-3/5" />
@@ -91,7 +97,7 @@ export function AiSummary({ thread, insights, autoEnabled, onRequest }: {
     return (
       <Block title={title}>
         <div className="flex items-center justify-between gap-3">
-          <p className="flex items-center gap-2 text-fg-3"><AlertTriangle className="size-4 text-warning" aria-hidden />{errorMessage(e)}</p>
+          <p className="flex items-center gap-2 text-fg-3"><TriangleAlert className="size-4 text-warning" strokeWidth={1.75} aria-hidden />{errorMessage(e)}</p>
           <Button size="sm" variant="ghost" onClick={() => void insights.refetch()}>Retry</Button>
         </div>
       </Block>

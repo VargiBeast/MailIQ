@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlarmClock, AlertCircle, Clock, FilePen, HelpCircle, Hourglass, Inbox, Menu, MessageSquareReply, Radar, RefreshCw, Sparkles, Star } from "lucide-react";
+import { AlarmClock, AlertCircle, CircleHelp, Hourglass, Inbox, Menu, MessageSquareReply, Pencil, Radar, RefreshCw, Sparkles, Star } from "lucide-react";
 import type { CopilotReply, PlanPreview } from "@shared/copilot";
 import { Dialog } from "@/components/ui/Dialog";
 import { PlanCard } from "./copilot/Copilot";
@@ -14,6 +14,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button, IconButton } from "@/components/ui/Button";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { SidebarContext } from "./AppLayout";
+import { OverviewIcon } from "./nav";
 import { useCopilot } from "./copilot/context";
 import { DailyBriefCard } from "./DailyBrief";
 
@@ -54,7 +55,7 @@ export function OverviewPage() {
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center gap-2 border-b border-line px-4 py-3 lg:px-8">
         <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Menu className="size-5" /></IconButton>
-        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><Sparkles className="size-4 text-accent-ink" /> AI Overview</h1>
+        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><OverviewIcon className="size-4 text-accent-ink" strokeWidth={1.75} aria-hidden /> AI Overview</h1>
         <div className="ml-auto flex items-center gap-2">
           {d && <span className="hidden text-xs text-fg-3 sm:inline">Updated {relative(d.generatedAt)}</span>}
           <IconButton label="Refresh overview" onClick={() => void q.refetch()} disabled={q.isFetching}>
@@ -88,7 +89,7 @@ export function OverviewPage() {
               <FollowUpRadar waiting={d.waiting} questions={d.questions ?? []} aiOn={d.aiStatus !== "not_configured" && d.aiStatus !== "disabled"} />
               <div className="grid gap-4 lg:grid-cols-2">
                 <ThreadSection title="Needs your reply" icon={<MessageSquareReply className="size-4" />} threads={d.needsReply} empty="You're all caught up — nothing is waiting on you." />
-                <ThreadSection title="Waiting on others" icon={<Clock className="size-4" />} threads={d.waiting} folder="sent" empty="No sent emails are waiting for an answer." note="You sent the last message more than 2 days ago." />
+                <ThreadSection title="Waiting on others" icon={<Hourglass className="size-4" strokeWidth={1.75} aria-hidden />} threads={d.waiting} folder="sent" empty="No sent emails are waiting for an answer." note="You sent the last message more than 2 days ago." />
               </div>
               <ThreadSection title="Important & starred" icon={<Star className="size-4" />} threads={d.important} empty="No important or starred conversations in the last two weeks." />
             </>
@@ -190,6 +191,7 @@ function ThreadSection({ title, icon, threads, empty, folder = "inbox", note }: 
 function OverviewSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading overview">
+      <span className="sr-only">Loading…</span>
       <Skeleton className="h-40 w-full rounded-[var(--radius-card)]" />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-[var(--radius-card)]" />)}</div>
       <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="h-64 rounded-[var(--radius-card)]" /><Skeleton className="h-64 rounded-[var(--radius-card)]" /></div>
@@ -222,7 +224,7 @@ function FollowUpRadar({ waiting, questions, aiOn }: { waiting: ThreadSummary[];
           <span className="block truncate text-[12.5px] text-fg-2">{t.subject || "(no subject)"}</span>
         </Link>
         {aiOn && (
-          <Button size="sm" variant="ai" loading={busy === key} disabled={busy !== null} icon={<FilePen className="size-3.5" />} onClick={() => nudge.mutate({ t, kind })} aria-label={`${kind === "followup" ? "Draft nudge" : "Draft reply"}: ${t.subject}`}>
+          <Button size="sm" variant="ai" loading={busy === key} disabled={busy !== null} icon={<Pencil className="size-3.5" strokeWidth={1.75} aria-hidden />} onClick={() => nudge.mutate({ t, kind })} aria-label={`${kind === "followup" ? "Draft nudge" : "Draft reply"}: ${t.subject}`}>
             {kind === "followup" ? "Nudge" : "Reply"}
           </Button>
         )}
@@ -241,7 +243,7 @@ function FollowUpRadar({ waiting, questions, aiOn }: { waiting: ThreadSummary[];
           {waiting.length ? <ul className="divide-y divide-line">{waiting.slice(0, 5).map((t) => row(t, "followup"))}</ul> : <p className="px-4 py-4 text-[12.5px] text-fg-3">Nobody owes you an answer right now.</p>}
         </div>
         <div>
-          <p className="flex items-center gap-1.5 px-4 pt-3 text-[11.5px] font-medium uppercase tracking-wide text-fg-3"><HelpCircle className="size-3" /> Questions you haven’t answered</p>
+          <p className="flex items-center gap-1.5 px-4 pt-3 text-[11.5px] font-medium uppercase tracking-wide text-fg-3"><CircleHelp className="size-3" strokeWidth={1.75} aria-hidden /> Questions you haven’t answered</p>
           {questions.length ? <ul className="divide-y divide-line">{questions.slice(0, 5).map((t) => row(t, "reply"))}</ul> : <p className="px-4 py-4 text-[12.5px] text-fg-3">No open questions. Nice.</p>}
         </div>
       </div>

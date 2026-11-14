@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "./Button";
+import { Tooltip } from "./Tooltip";
 
 export function Dialog({
   open,
@@ -43,17 +44,20 @@ export function Dialog({
                 <RD.Description className="sr-only">{title}</RD.Description>
               )}
             </div>
-            <RD.Close
-              className={cn(
-                "shrink-0 rounded-[var(--radius-sm)] p-1.5 text-fg-3",
-                "transition-colors duration-[var(--duration-fast)]",
-                "hover:bg-surface-2 hover:text-fg",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ring)]",
-              )}
-              aria-label="Close"
-            >
-              <X className="size-4" aria-hidden />
-            </RD.Close>
+            <Tooltip content="Close">
+              <RD.Close
+                className={cn(
+                  "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] p-1.5 text-fg-3",
+                  "pointer-coarse:min-h-11 pointer-coarse:min-w-11",
+                  "transition-colors duration-[var(--duration-fast)]",
+                  "hover:bg-surface-2 hover:text-fg",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ring)]",
+                )}
+                aria-label="Close"
+              >
+                <X className="size-4" strokeWidth={1.75} aria-hidden />
+              </RD.Close>
+            </Tooltip>
           </div>
           {children}
         </RD.Content>

@@ -61,7 +61,7 @@ export function DailyBriefCard({ compact = false }: { compact?: boolean }) {
       </p>
     );
   }
-  if (q.isLoading) return <div className={cn(compact ? "mx-3 mt-1" : "")}><Skeleton className={compact ? "h-11 rounded-2xl" : "h-14 rounded-2xl"} /></div>;
+  if (q.isLoading) return <div className={cn(compact ? "mx-3 mt-1" : "")} aria-busy="true"><span className="sr-only">Loading…</span><Skeleton className={compact ? "h-11 rounded-2xl" : "h-14 rounded-2xl"} /></div>;
   if (q.isError || !b) return compact ? null : <p className="text-[13px] text-fg-3">Daily brief unavailable: {errorMessage(q.error)}</p>;
 
   const counts = [

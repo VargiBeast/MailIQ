@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 /** Soft prompt to install MailIQ as a PWA on supported browsers. */
 export function InstallHint() {
@@ -33,17 +34,19 @@ export function InstallHint() {
       >
         Install
       </button>
-      <button
-        type="button"
-        aria-label="Dismiss"
-        className="shrink-0 rounded-md p-1 text-fg-3 hover:bg-surface-2"
-        onClick={() => {
-          localStorage.setItem("mailiq-install-dismissed", "1");
-          setDismissed(true);
-        }}
-      >
-        <X className="size-4" />
-      </button>
+      <Tooltip content="Dismiss">
+        <button
+          type="button"
+          aria-label="Dismiss"
+          className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-fg-3 hover:bg-surface-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+          onClick={() => {
+            localStorage.setItem("mailiq-install-dismissed", "1");
+            setDismissed(true);
+          }}
+        >
+          <X className="size-4" strokeWidth={1.75} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 }

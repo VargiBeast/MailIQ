@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { Ellipsis, ImageOff } from "lucide-react";
 import type { AttachmentMeta, MessageDetail } from "@shared/mail";
 import { buildSrcDoc, sanitizeEmailHtml, splitQuoted, textToHtml } from "@/lib/sanitize";
 import { attachmentUrl } from "@/lib/mail";
@@ -95,8 +95,9 @@ export function EmailBody({ message, accountId }: { message: MessageDetail; acco
         />
       </div>
       {rendered.hasQuote && (
-        <button type="button" onClick={() => setShowQuoted((v) => !v)} className="rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-expanded={showQuoted}>
-          {showQuoted ? "Hide quoted text" : "••• Show quoted text"}
+        <button type="button" onClick={() => setShowQuoted((v) => !v)} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-expanded={showQuoted}>
+          <Ellipsis className="size-4" strokeWidth={1.75} aria-hidden />
+          {showQuoted ? "Hide quoted text" : "Show quoted text"}
         </button>
       )}
     </div>

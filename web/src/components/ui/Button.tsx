@@ -1,6 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { Tooltip } from "./Tooltip";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "ai";
 type Size = "sm" | "md" | "lg";
@@ -23,8 +24,8 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-[var(--radius-sm)]",
-  md: "h-9 px-3.5 text-[13.5px] gap-2 rounded-[var(--radius-md)]",
+  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-[var(--radius-sm)] pointer-coarse:h-11 pointer-coarse:min-w-11",
+  md: "h-9 px-3.5 text-[13.5px] gap-2 rounded-[var(--radius-md)] pointer-coarse:h-11 pointer-coarse:min-w-11",
   lg: "h-11 px-5 text-[15px] gap-2 rounded-[var(--radius-lg)]",
 };
 
@@ -51,7 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {...rest}
     >
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : icon}
-      {children}
+      {loading ? "Loading…" : children}
     </button>
   );
 });
@@ -68,26 +69,29 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   ref,
 ) {
   return (
-    <button
-      ref={ref}
-      type={type}
-      aria-label={label}
-      title={label}
-      aria-pressed={active || undefined}
-      disabled={disabled}
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-fg-3",
-        "transition-[background,color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)]",
-        "hover:bg-surface-2 hover:text-fg active:scale-95",
-        "disabled:pointer-events-none disabled:opacity-40",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ring)]",
-        size === "md" ? "size-9" : "size-7",
-        active && "bg-accent-soft text-accent-ink hover:text-accent-ink",
-        className,
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
+    <Tooltip content={label}>
+      <button
+        ref={ref}
+        type={type}
+        aria-label={label}
+        aria-pressed={active}
+        disabled={disabled}
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-fg-3",
+          "transition-[background,color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)]",
+          "hover:bg-surface-2 hover:text-fg active:scale-95",
+          "disabled:pointer-events-none disabled:opacity-40",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ring)]",
+          size === "md" ? "size-9 pointer-coarse:size-11" : "size-7 pointer-coarse:size-11",
+          active && "bg-accent-soft text-accent-ink hover:text-accent-ink",
+          className,
+        )}
+        {...rest}
+      >
+        <span className="inline-flex" aria-hidden>
+          {children}
+        </span>
+      </button>
+    </Tooltip>
   );
 });

@@ -1,5 +1,5 @@
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, EyeOff, Inbox, Keyboard, Lock, MessageSquareText, PenLine, Search, ShieldCheck, Sparkles, Tags } from "lucide-react";
+import { CheckCircle2, EyeOff, Inbox, Keyboard, Lock, MessageSquareText, Pencil, Search, ShieldCheck, Sparkles, Tags, TriangleAlert } from "lucide-react";
 import { useSession } from "@/lib/session";
 import { Logo } from "@/components/ui/misc";
 import { Splash } from "@/components/Splash";
@@ -18,7 +18,7 @@ const ERRORS: Record<string, string> = {
 const FEATURES = [
   { icon: Inbox, title: "One calm inbox", text: "Your connected accounts in one unified, fast inbox with folders, labels, filters and keyboard shortcuts." },
   { icon: Sparkles, title: "Summaries that get to the point", text: "Open a thread and see a short summary, key points, action items and deadlines." },
-  { icon: PenLine, title: "Replies in your voice", text: "Draft, shorten or change the tone of an email. You always review AI text before it's sent." },
+  { icon: Pencil, title: "Replies in your voice", text: "Draft, shorten or change the tone of an email. You always review AI text before it's sent." },
   { icon: Search, title: "Search the way you think", text: "“Find the invoice I got last month” becomes a precise mailbox search you can see and edit." },
   { icon: MessageSquareText, title: "Ask your inbox", text: "Ask questions about your mail and get answers that link to the exact emails they came from." },
   { icon: ShieldCheck, title: "Private by design", text: "No email bodies stored, remote images blocked, AI exclusions for senders and labels, and a full AI access log." },
@@ -80,7 +80,7 @@ export function LandingPage() {
           </p>
           {(error || deleted || !googleReady) && (
             <div role={error ? "alert" : "status"} className={`mx-auto mt-6 flex max-w-md items-start gap-2 rounded-xl border px-4 py-3 text-left text-[13.5px] ${error || !googleReady ? "border-warning/40 bg-warning/10" : "border-success/40 bg-success/10"}`}>
-              {error || !googleReady ? <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" /> : <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />}
+              {error || !googleReady ? <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" strokeWidth={1.75} aria-hidden /> : <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" strokeWidth={1.75} aria-hidden />}
               <span className="text-fg-2">
                 {deleted ? "Your MailIQ data was deleted and Google access revoked." : error ? (ERRORS[error] ?? "Sign-in didn't complete. Please try again.") : "Google sign-in isn't configured on this server. The owner needs to add Google OAuth credentials (see docs/SETUP.md)."}
               </span>

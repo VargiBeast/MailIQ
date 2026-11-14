@@ -87,7 +87,8 @@ test("read later: save from the reader with b, see it in the Read later view, re
   await expect(page.getByRole("article", { name: /Q4 design review/ })).toBeVisible();
   await page.keyboard.press("b");
   await expect(page.getByText("Saved to Read later")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Remove from Read later/ })).toBeVisible();
+  const later = page.getByRole("button", { name: "Read later (b)" });
+  await expect(later).toHaveAttribute("aria-pressed", "true");
 
   await page.getByRole("link", { name: "Read later" }).click();
   await expect(page.getByRole("heading", { name: "Read later" })).toBeVisible();
@@ -96,7 +97,7 @@ test("read later: save from the reader with b, see it in the Read later view, re
   await shot(page, "33-read-later");
 
   await page.locator('[data-thread-id="t-canary"]').click();
-  await page.getByRole("button", { name: /Remove from Read later/ }).click();
+  await page.getByRole("button", { name: "Read later (b)" }).click();
   await expect(page.getByText("Removed from Read later")).toBeVisible();
   await expect(page.locator('[data-thread-id="t-canary"]')).toHaveCount(0);
 });

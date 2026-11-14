@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, Check, Moon, ShieldCheck, Sparkles, Sun } from "lucide-react";
+import { Check, Moon, ShieldCheck, Sparkles, Sun, TriangleAlert } from "lucide-react";
 import { useSession } from "@/lib/session";
 import { useUpdateSettings } from "@/lib/settings";
 import { cn } from "@/lib/cn";
@@ -47,7 +47,7 @@ export function OnboardingPage() {
                   <li key={a.id} className="flex items-center gap-3 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
                     <Avatar name={a.name} email={a.email} src={a.picture} size={32} />
                     <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">{a.email}</span>
-                    {a.status === "active" ? <span className="flex items-center gap-1 text-xs text-success"><Check className="size-3.5" /> Gmail connected</span> : <span className="flex items-center gap-1 text-xs text-danger"><AlertTriangle className="size-3.5" /> No Gmail access</span>}
+                    {a.status === "active" ? <span className="flex items-center gap-1 text-xs text-success"><Check className="size-3.5" strokeWidth={1.75} aria-hidden /> Gmail connected</span> : <span className="flex items-center gap-1 text-xs text-danger"><TriangleAlert className="size-3.5" strokeWidth={1.75} aria-hidden /> No Gmail access</span>}
                   </li>
                 ))}
               </ul>

@@ -2,14 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { singleKeysOff } from "@/lib/prefs";
 import { useSearchParams } from "react-router-dom";
 import {
-  AlertTriangle, Archive, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CornerUpLeft, Download, FileText, Forward, Image as ImageIcon,
-  Inbox, Mail, MailOpen, Maximize2, MoreHorizontal, Paperclip, Reply, ReplyAll, Send, ShieldAlert, Sparkles, Star, Tag, Trash2, Undo2, Wand2,
+  Archive, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CornerUpLeft, Download, FileText, Forward, Image as ImageIcon, TriangleAlert,
+  Inbox, Loader2, Mail, MailOpen, Maximize2, MoreHorizontal, Paperclip, Reply, ReplyAll, Send, ShieldAlert, Sparkles, Star, Tag, Trash2, Undo2, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import type { MessageDetail, ThreadAction, ThreadDetail } from "@shared/mail";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button, IconButton } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { SnoozeBanner, SnoozeMenu } from "./SnoozeMenu";
 import { ReadLaterButton } from "./ReadLaterButton";
@@ -27,6 +28,7 @@ import { useComposer } from "../composer/context";
 import { EmailBody } from "./EmailBody";
 import { AiSummary, useInsights } from "./AiSummary";
 import { SecurityBanner } from "./SecurityBanner";
+import { FOLDER_META } from "../nav";
 
 export interface ReaderProps {
   accountId?: string;
@@ -55,7 +57,7 @@ export function Reader({ accountId, threadId, position, onClose, onOpenCopilot, 
       <div className="flex h-full flex-col">
         <div className="flex h-14 items-center border-b border-line px-3 lg:hidden"><IconButton label="Back" onClick={onClose}><ArrowLeft className="size-5" /></IconButton></div>
         <EmptyState
-          icon={<AlertTriangle className="size-5" />}
+          icon={<TriangleAlert className="size-5" aria-hidden />}
           title={notFound ? "This conversation is gone" : "Couldn't open this conversation"}
           description={notFound ? "It may have been deleted or moved in Gmail." : errorMessage(thread.error)}
           action={notFound ? <Button onClick={onClose}>Back to list</Button> : <Button onClick={() => void thread.refetch()}>Try again</Button>}
@@ -118,7 +120,7 @@ function ReaderBody({ thread, position, onClose, onOpenCopilot, folder }: { thre
 
   return (
     <article className="flex h-full min-h-0 flex-col" aria-label={`Conversation: ${thread.subject}`}>
-      <div className="flex h-14 shrink-0 items-center gap-0.5 border-b border-line px-2 sm:px-3">
+      <div className="flex min-h-14 min-w-0 flex-wrap items-center gap-0.5 border-b border-line px-2 py-1 sm:px-3">
         <IconButton label="Back to list" onClick={onClose}><ArrowLeft className="size-[18px]" /></IconButton>
         <div className="mx-1 h-5 w-px bg-line" aria-hidden />
         {thread.inTrash ? (
@@ -139,8 +141,8 @@ function ReaderBody({ thread, position, onClose, onOpenCopilot, folder }: { thre
         {!thread.inTrash && <ReadLaterButton thread={thread} />}
         <NoteButton thread={thread} onClick={() => setNoteEditing(true)} />
         <div className="mx-1 h-5 w-px bg-line" aria-hidden />
-        <IconButton label={thread.starred ? "Unstar (s)" : "Star (s)"} active={thread.starred} onClick={() => run(thread.starred ? "unstar" : "star")}>
-          <Star className={cn("size-[18px]", thread.starred && "text-amber-400")} fill={thread.starred ? "currentColor" : "none"} />
+        <IconButton label="Star (s)" aria-pressed={thread.starred} onClick={() => run(thread.starred ? "unstar" : "star")}>
+          <Star className={cn("size-5", thread.starred && "text-amber-400")} fill={thread.starred ? "currentColor" : "none"} strokeWidth={thread.starred ? 2.25 : 1.75} aria-hidden />
         </IconButton>
         <LabelsMenu thread={thread} />
         <Menu>
@@ -150,7 +152,7 @@ function ReaderBody({ thread, position, onClose, onOpenCopilot, folder }: { thre
             <MenuItem icon={<ReplyAll />} onSelect={() => composer.open({ mode: "replyAll", thread, message: last })}>Reply all</MenuItem>
             <MenuItem icon={<Forward />} onSelect={() => composer.open({ mode: "forward", thread, message: last })}>Forward</MenuItem>
             <MenuSeparator />
-            <MenuItem icon={<Tag />} onSelect={() => run(thread.important ? "unimportant" : "important", thread.important ? "Marked not important" : "Marked important")}>
+            <MenuItem icon={<FOLDER_META.important.icon />} onSelect={() => run(thread.important ? "unimportant" : "important", thread.important ? "Marked not important" : "Marked important")}>
               {thread.important ? "Mark not important" : "Mark important"}
             </MenuItem>
             {aiOn && <MenuItem icon={<Sparkles />} onSelect={onOpenCopilot}>Ask Copilot about this</MenuItem>}
@@ -565,7 +567,12 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
             placeholder={aiOn ? "Write a reply… or type an instruction and press Generate" : "Write a reply…"}
             className="block w-full resize-none bg-transparent px-4 py-2 text-[13.5px] text-fg placeholder:text-fg-3 outline-none"
           />
-          {isAi && <p className="px-4 text-[11.5px] text-ai-title">✦ Written with AI — review before sending.</p>}
+          {isAi && (
+            <p className="flex items-center gap-1.5 px-4 text-[11.5px] text-ai-title">
+              <Sparkles className="size-3.5" strokeWidth={1.75} aria-hidden />
+              Written with AI — review before sending.
+            </p>
+          )}
           <div className="flex items-center gap-1 px-2 pb-2">
             <IconButton
               label="Open full composer (attachments, formatting, CC/BCC)"
@@ -579,14 +586,24 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
             </IconButton>
             <div className="flex-1" />
             <span className="hidden text-[11px] text-fg-3 sm:inline">⌘/Ctrl + Enter</span>
-            <button
-              type="submit"
-              aria-label="Send reply"
-              disabled={!text.trim() || sending}
-              className="ml-2 flex size-8 items-center justify-center rounded-full bg-accent text-white transition hover:brightness-110 disabled:opacity-40"
-            >
-              <Send className="size-4" />
-            </button>
+            <Tooltip content="Send reply">
+              <button
+                type="submit"
+                aria-label="Send reply"
+                disabled={!text.trim() || sending}
+                aria-busy={sending || undefined}
+                className="ml-2 inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-full bg-accent px-2 text-[12px] font-medium text-white transition pointer-coarse:min-h-11 pointer-coarse:min-w-11 hover:brightness-110 disabled:opacity-40"
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    Loading…
+                  </>
+                ) : (
+                  <Send className="size-4" strokeWidth={1.75} aria-hidden />
+                )}
+              </button>
+            </Tooltip>
           </div>
         </form>
       </div>
@@ -608,6 +625,7 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
 function ReaderSkeleton({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col" aria-busy="true" aria-label="Loading conversation">
+      <span className="sr-only">Loading…</span>
       <div className="flex h-14 items-center gap-2 border-b border-line px-3">
         <IconButton label="Back to list" onClick={onClose}><ArrowLeft className="size-[18px]" /></IconButton>
         <Skeleton className="h-6 w-40" />
