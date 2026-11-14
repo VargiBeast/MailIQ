@@ -9,7 +9,7 @@ test.describe("Public pages", () => {
     await expect(page.getByRole("link", { name: "Sign in with Google" }).first()).toHaveAttribute("href", /\/api\/auth\/google\/start/);
     await expect(page.getByRole("heading", { name: "Summaries that get to the point" })).toBeVisible();
     await shot(page, "01-landing-desktop");
-    await page.getByRole("link", { name: "Read the privacy policy" }).click();
+    await page.getByRole("link", { name: "Privacy policy" }).click();
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
     await expect(page.getByText("Limited Use requirements", { exact: false })).toBeVisible();
