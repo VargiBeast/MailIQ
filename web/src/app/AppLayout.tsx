@@ -77,12 +77,13 @@ function Shell() {
         <RD.Portal>
           <RD.Overlay
             data-drawer-overlay=""
-            className="fixed inset-x-0 top-0 z-40 h-[100dvh] min-h-full bg-[var(--overlay)] lg:hidden"
+            className="fixed inset-x-0 top-0 z-40 h-[100dvh] min-h-full bg-[var(--overlay)] motion-overlay lg:hidden"
           />
           <RD.Content
             className={cn(
               "fixed left-0 top-0 z-50 box-border flex h-[100dvh] min-h-full w-[min(300px,88vw)] flex-col",
-              "border-r border-line bg-surface pb-[var(--sab)] pt-[var(--sat)] shadow-[var(--shadow-lg)] animate-in lg:hidden",
+              "border-r border-line bg-surface pb-[var(--sab)] pt-[var(--sat)] shadow-[var(--shadow-lg)] lg:hidden",
+              "motion-slide-from-left motion-distance-lg",
             )}
             aria-describedby={undefined}
           >

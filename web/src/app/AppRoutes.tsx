@@ -15,7 +15,7 @@ const NewslettersPage = lazy(() => import("./Newsletters").then((m) => ({ defaul
 const SettingsPage = lazy(() => import("./settings/Settings").then((m) => ({ default: m.SettingsPage })));
 const AccountPage = lazy(() => import("./settings/Account").then((m) => ({ default: m.AccountPage })));
 
-const Page = ({ children }: { children: ReactNode }) => <Suspense fallback={<div className="p-6"><Skeleton className="h-6 w-48" /></div>}>{children}</Suspense>;
+const Page = ({ children }: { children: ReactNode }) => <Suspense fallback={<div className="animate-pane p-6"><Skeleton className="h-6 w-48" /></div>}>{children}</Suspense>;
 
 const MAIL_FOLDERS = new Set<string>([...FOLDERS, "label", "search"]);
 

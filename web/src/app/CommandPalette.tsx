@@ -128,11 +128,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-black/55 animate-in" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
           data-palette=""
           aria-describedby={undefined}
-          className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow)] animate-in"
+          className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow-lg)] motion-scale"
         >
           <RD.Title className="sr-only">Command palette</RD.Title>
           <div className="flex items-center gap-2 border-b border-line px-4">
@@ -171,7 +171,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                     data-index={i}
                     onMouseMove={() => setActive(i)}
                     onClick={() => runAt(i)}
-                    className={cn("flex cursor-default items-center gap-3 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors", i === active ? "bg-surface-3 text-fg" : "text-fg-2")}
+                    className={cn("flex cursor-default items-center gap-3 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]", i === active ? "bg-surface-3 text-fg" : "text-fg-2")}
                   >
                     <span className={cn("[&>svg]:size-4", c.group === "Copilot" ? "text-accent-ink" : "text-fg-3")}>{c.icon}</span>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>

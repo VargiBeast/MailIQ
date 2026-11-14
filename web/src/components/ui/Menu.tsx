@@ -21,7 +21,7 @@ export function MenuContent({
         sideOffset={6}
         className={cn(
           "z-50 min-w-[200px] rounded-[var(--radius-lg)] border border-line-strong bg-surface p-1",
-          "shadow-[var(--shadow-md)] animate-scale-in",
+          "origin-[var(--radix-dropdown-menu-content-transform-origin)] shadow-[var(--shadow-md)] motion-scale",
           className,
         )}
       >

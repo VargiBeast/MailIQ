@@ -13,6 +13,7 @@ import { ConfirmDialog, Dialog } from "@/components/ui/Dialog";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { Textarea } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { sendWithUndo } from "@/lib/undoSend";
@@ -133,12 +134,18 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
   const [confirmAi, setConfirmAi] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [undoHtml, setUndoHtml] = useState<string | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [saveTemplate, setSaveTemplate] = useState<Partial<Template> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const reducedMotion = usePrefersReducedMotion();
   const aiOn = Boolean(config?.ai) && session?.settings?.ai.enabled !== false;
   const signature = session?.settings?.ai.signature ?? "";
 
@@ -209,8 +216,43 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       const ok = await saveDraft(true);
       if (ok) toast("Draft saved", { description: "Find it in Drafts." });
     }
-    onClose();
+    beginClose();
   };
+
+  const beginClose = () => {
+    if (closingRef.current) return;
+    if (reducedMotion || panelRef.current?.hidden) {
+      onClose();
+      return;
+    }
+    closingRef.current = true;
+    setClosing(true);
+  };
+
+  useEffect(() => {
+    if (!closing) return;
+    const el = panelRef.current;
+    if (!el) {
+      onCloseRef.current();
+      return;
+    }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      onCloseRef.current();
+    };
+    const onEnd = (e: AnimationEvent) => {
+      if (e.target !== el || e.animationName !== "scale-out") return;
+      finish();
+    };
+    el.addEventListener("animationend", onEnd);
+    const timer = window.setTimeout(finish, 480);
+    return () => {
+      el.removeEventListener("animationend", onEnd);
+      window.clearTimeout(timer);
+    };
+  }, [closing]);
 
   const discard = async () => {
     setConfirmDiscard(false);
@@ -224,7 +266,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       }
     }
     toast("Draft discarded");
-    onClose();
+    beginClose();
   };
 
   const send = async (aiConfirmed: boolean) => {
@@ -339,12 +381,11 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       aria-modal="false"
       hidden={hidden}
       onKeyDown={onKeyDown}
+      ref={panelRef}
+      data-closing={closing ? "" : undefined}
       className={cn(
-        "fixed z-40 flex flex-col overflow-hidden border border-line-strong bg-surface shadow-[var(--shadow-lg)] animate-scale-in",
-        "inset-0 sm:inset-auto",
-        maximized
-          ? "sm:inset-6 sm:rounded-[var(--radius-xl)]"
-          : "sm:bottom-4 sm:right-4 sm:h-[min(640px,calc(100dvh-32px))] sm:w-[min(640px,calc(100vw-2rem))] sm:rounded-[var(--radius-xl)]",
+        "composer-panel fixed z-40 flex flex-col overflow-hidden border border-line-strong bg-surface shadow-[var(--shadow-lg)] animate-scale-in",
+        "inset-0 sm:rounded-[var(--radius-xl)]",
       )}
     >
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-4">
@@ -432,7 +473,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
         <MicButton onText={(t) => editor?.chain().focus().insertContent({ type: "text", text: `${t} ` }).run()} />
         {aiOn && (
           <>
-            <Button variant="ai" size="md" icon={<Sparkles className="size-3.5" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
+            <Button variant="ai" size="md" icon={aiBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
             <Menu>
               <MenuTrigger asChild>
                 <Button variant="ghost" size="md" disabled={aiBusy} icon={aiBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}>
