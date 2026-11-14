@@ -373,11 +373,13 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
   const rafRef = useRef(0);
   const offsetRef = useRef(0);
   const snapListener = useRef<((ev: TransitionEvent) => void) | null>(null);
+  const snapTimer = useRef(0);
   const [swiping, setSwiping] = useState(false);
   useEffect(() => {
     const row = rowRef.current;
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (snapTimer.current) window.clearTimeout(snapTimer.current);
       const listener = snapListener.current;
       if (row && listener) row.removeEventListener("transitionend", listener);
     };
@@ -442,6 +444,8 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
       const previous = snapListener.current;
       if (previous) row.removeEventListener("transitionend", previous);
       snapListener.current = null;
+      if (snapTimer.current) window.clearTimeout(snapTimer.current);
+      snapTimer.current = 0;
       row.style.background = "";
       if (reducedMotion || offset === 0) {
         row.style.transition = "";
@@ -449,8 +453,10 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
       } else {
         row.style.transition = "transform var(--duration-normal) var(--ease-out)";
         row.style.transform = "translate3d(0,0,0)";
-        const clear = (ev: TransitionEvent) => {
-          if (ev.propertyName !== "transform") return;
+        const clear = (ev?: TransitionEvent) => {
+          if (ev && ev.propertyName !== "transform") return;
+          window.clearTimeout(snapTimer.current);
+          snapTimer.current = 0;
           row.style.transition = "";
           row.style.transform = "";
           row.removeEventListener("transitionend", clear);
@@ -458,6 +464,7 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
         };
         snapListener.current = clear;
         row.addEventListener("transitionend", clear);
+        snapTimer.current = window.setTimeout(clear, 300);
       }
     }
     offsetRef.current = 0;

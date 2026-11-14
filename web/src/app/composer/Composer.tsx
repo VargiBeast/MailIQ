@@ -243,7 +243,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       onCloseRef.current();
     };
     const onEnd = (e: AnimationEvent) => {
-      if (e.target !== el || e.animationName !== "fade-scale-out") return;
+      if (e.target !== el || e.animationName !== "scale-out") return;
       finish();
     };
     el.addEventListener("animationend", onEnd);

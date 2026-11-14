@@ -100,12 +100,12 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
           data-expanded={expanded ? "true" : "false"}
           className={cn(
             "copilot-panel fixed z-50 flex flex-col border border-line-strong bg-surface shadow-[var(--shadow-lg)] outline-none",
-            "data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
+            "motion-scale",
           )}
         >
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">

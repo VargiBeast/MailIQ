@@ -128,11 +128,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
           data-palette=""
           aria-describedby={undefined}
-          className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow-lg)] data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out"
+          className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow-lg)] motion-scale"
         >
           <RD.Title className="sr-only">Command palette</RD.Title>
           <div className="flex items-center gap-2 border-b border-line px-4">
