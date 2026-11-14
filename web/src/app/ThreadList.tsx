@@ -5,10 +5,11 @@ import { AlertTriangle, Check, ChevronDown, ChevronUp, Inbox, Loader2, Menu as M
 import { useQueryClient } from "@tanstack/react-query";
 import type { Category, Folder, ThreadSummary } from "@shared/mail";
 import { Avatar } from "@/components/ui/Avatar";
-import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { EmptyState } from "@/components/ui/misc";
 import { IconButton, Button } from "@/components/ui/Button";
 import { Menu, MenuCheckbox, MenuContent, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { cn } from "@/lib/cn";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import { dateGroup, displayName, listDate } from "@/lib/format";
 import { useFocusMode } from "@/lib/focus";
 import { useThreadAction, useThreads, useDrafts, type ListArgs } from "@/lib/mail";
@@ -318,8 +319,8 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
           <ul className={cn("pb-4", picked.size > 0 && "pb-24 lg:pb-4")} aria-label="Conversations">
             {starred.length > 0 && (
               <li>
-                <GroupHeader label="Starred" action={<button type="button" className="flex items-center gap-1 text-[11.5px] text-fg-3 hover:text-fg" onClick={() => setShowStarred((v) => !v)} aria-expanded={showStarred}>{showStarred ? "Hide" : "Show"}<ChevronUp className={cn("size-3.5 transition-transform", !showStarred && "rotate-180")} /></button>} />
-                {showStarred && <ul>{starred.map((t) => <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} />)}</ul>}
+                <GroupHeader label="Starred" action={<button type="button" className="flex items-center gap-1 text-[11.5px] text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:text-fg" onClick={() => setShowStarred((v) => !v)} aria-expanded={showStarred}>{showStarred ? "Hide" : "Show"}<ChevronUp className={cn("size-3.5 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", !showStarred && "rotate-180")} /></button>} />
+                {showStarred && <ul className="animate-reveal">{starred.map((t) => <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} />)}</ul>}
               </li>
             )}
             {groups.map(([label, items]) => (
@@ -364,8 +365,35 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
   const press = useRef<{ timer: number; fired: boolean } | null>(null);
   // Long-press (touch) enters selection mode; while selecting, a tap toggles instead of opening.
   // Swipe left (touch) to reply: opens the conversation with the reply box focused and AI suggestions.
+  // Drag writes transform on the row via rAF so pointermove does not re-render the list.
   const swipe = useRef<{ x: number; y: number; active: boolean; done: boolean } | null>(null);
-  const [offset, setOffset] = useState(0);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const revealRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef(0);
+  const offsetRef = useRef(0);
+  const [swiping, setSwiping] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+  const paintSwipe = (dx: number) => {
+    const row = rowRef.current;
+    if (row) {
+      row.style.transition = "none";
+      row.style.transform = `translate3d(${dx}px,0,0)`;
+      row.style.background = "var(--surface)";
+    }
+    const reveal = revealRef.current;
+    if (reveal) reveal.dataset.armed = dx <= -SWIPE_TRIGGER ? "true" : "false";
+  };
+  useEffect(() => {
+    if (!swiping) return;
+    const dx = offsetRef.current;
+    const row = rowRef.current;
+    if (row) {
+      row.style.transition = "none";
+      row.style.transform = `translate3d(${dx}px,0,0)`;
+      row.style.background = "var(--surface)";
+    }
+    if (revealRef.current) revealRef.current.dataset.armed = dx <= -SWIPE_TRIGGER ? "true" : "false";
+  }, [swiping]);
   const onPointerMove = (e: React.PointerEvent) => {
     const s = swipe.current;
     if (!s || e.pointerType !== "touch" || selecting) return;
@@ -375,16 +403,48 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
       s.active = true;
       cancelPress();
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+      setSwiping(true);
     }
-    if (s.active) setOffset(Math.max(-SWIPE_MAX, Math.min(0, dx)));
+    if (s.active) {
+      offsetRef.current = Math.max(-SWIPE_MAX, Math.min(0, dx));
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = 0;
+          paintSwipe(offsetRef.current);
+        });
+      }
+    }
   };
   const endSwipe = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
     const s = swipe.current;
+    const offset = offsetRef.current;
+    const row = rowRef.current;
     if (s?.active) {
       s.done = true;
       if (offset <= -SWIPE_TRIGGER) { navigator.vibrate?.(8); onSwipeReply(); }
+      setSwiping(false);
     }
-    setOffset(0);
+    if (row && offset !== 0) {
+      row.style.background = "";
+      if (reducedMotion) {
+        row.style.transform = "";
+      } else {
+        row.style.transition = "transform var(--duration-normal) var(--ease-out)";
+        row.style.transform = "translate3d(0,0,0)";
+        const clear = (ev: TransitionEvent) => {
+          if (ev.propertyName !== "transform") return;
+          row.style.transition = "";
+          row.style.transform = "";
+          row.removeEventListener("transitionend", clear);
+        };
+        row.addEventListener("transitionend", clear);
+      }
+    }
+    offsetRef.current = 0;
   };
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType !== "touch") return;
@@ -418,18 +478,17 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
     // Off-screen rows skip layout and paint (content-visibility), a cheap stand-in for virtualization that
     // keeps find-in-page, keyboard focus and screen readers working on the full list.
     <li className="relative [contain-intrinsic-size:auto_78px] [content-visibility:auto]">
-      {offset < 0 && (
-        <div aria-hidden className={cn("absolute inset-y-0 right-2 flex items-center gap-1.5 rounded-xl px-4 text-[13px] font-medium transition-colors", offset <= -SWIPE_TRIGGER ? "bg-accent text-accent-fg" : "bg-accent-soft text-accent-ink")}>
+      {swiping && (
+        <div ref={revealRef} aria-hidden className="absolute inset-y-0 right-2 flex items-center gap-1.5 rounded-xl bg-accent-soft px-4 text-[13px] font-medium text-accent-ink transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] data-[armed=true]:bg-accent data-[armed=true]:text-accent-fg">
           <Reply className="size-4" /> Reply
         </div>
       )}
       <div
+        ref={rowRef}
         data-thread-id={t.id}
-        style={offset ? { transform: `translateX(${offset}px)` } : undefined}
         data-picked={picked ? "" : undefined}
         className={cn(
-          "group relative mx-1.5 flex cursor-pointer touch-pan-y select-none gap-3.5 rounded-[var(--radius-lg)] px-3 py-[var(--row-py,12px)] transition-colors duration-[var(--duration-fast)]",
-          offset ? "bg-surface" : "transition-transform",
+          "group relative mx-1.5 flex cursor-pointer touch-pan-y select-none gap-3.5 rounded-[var(--radius-lg)] px-3 py-[var(--row-py,12px)] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]",
           picked
             ? "bg-accent-soft ring-1 ring-inset ring-[var(--ai-border)]"
             : selected
@@ -441,11 +500,11 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
         onPointerMove={onPointerMove}
         onPointerUp={() => { cancelPress(); endSwipe(); }}
         onPointerLeave={cancelPress}
-        onPointerCancel={() => { cancelPress(); setOffset(0); }}
+        onPointerCancel={() => { cancelPress(); endSwipe(); }}
         onContextMenu={(e) => { if (press.current?.fired) e.preventDefault(); }}
       >
         <div className="relative size-9 shrink-0">
-          <span className={cn("block transition-opacity", (picked || selecting) ? "opacity-0" : "group-hover:opacity-0 group-focus-within:opacity-0")}>
+          <span className={cn("block transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)]", (picked || selecting) ? "opacity-0" : "group-hover:opacity-0 group-focus-within:opacity-0")}>
             <Avatar name={displayName(t.from)} email={t.from.email} size={36} />
           </span>
           <button
@@ -455,7 +514,7 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
             aria-label={`Select: ${t.subject || "(no subject)"}`}
             onClick={(e) => { e.stopPropagation(); onPick(e.shiftKey); }}
             className={cn(
-              "absolute inset-0 flex items-center justify-center rounded-full border transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
+              "absolute inset-0 flex items-center justify-center rounded-full border transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
               picked ? "border-accent bg-accent text-accent-fg opacity-100" : "border-line-strong bg-surface-2 text-transparent",
               !picked && (selecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
             )}
@@ -491,7 +550,7 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
           onClick={(e) => { e.stopPropagation(); onStar(); }}
           aria-label={t.starred ? "Unstar conversation" : "Star conversation"}
           aria-pressed={t.starred}
-          className={cn("absolute bottom-[calc(var(--row-py,12px)-4px)] right-1.5 rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]", t.starred ? "text-amber-400" : "text-fg-3 hover:text-fg-2")}
+          className={cn("absolute bottom-[calc(var(--row-py,12px)-4px)] right-1.5 rounded-full p-1 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]", t.starred ? "text-amber-400" : "text-fg-3 hover:text-fg-2")}
         >
           <Star className="size-[18px]" fill={t.starred ? "currentColor" : "none"} strokeWidth={1.75} />
         </button>
@@ -504,12 +563,12 @@ function ListSkeleton() {
   return (
     <div className="space-y-1 p-3" aria-busy="true" aria-label="Loading conversations">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex gap-3 px-2 py-3">
-          <Skeleton className="size-9 rounded-full" />
+        <div key={i} className="shimmer-row flex gap-3 px-2 py-3">
+          <div className="size-9 shrink-0 rounded-full bg-surface-2" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-3 w-1/3" />
-            <Skeleton className="h-3 w-4/5" />
-            <Skeleton className="h-3 w-2/3" />
+            <div className="h-3 w-1/3 rounded-[var(--radius-sm)] bg-surface-2" />
+            <div className="h-3 w-4/5 rounded-[var(--radius-sm)] bg-surface-2" />
+            <div className="h-3 w-2/3 rounded-[var(--radius-sm)] bg-surface-2" />
           </div>
         </div>
       ))}
@@ -573,7 +632,7 @@ function SearchPill({ inputRef, value, onChange, searching, aiOn, onOpenSidebar,
       <form
         role="search"
         onSubmit={(e) => { e.preventDefault(); pick(() => (asks ? onAsk(text) : onSearch("gmail"))); }}
-        className="flex h-12 items-center gap-1 rounded-full bg-surface-2 pl-1.5 pr-1.5 transition-colors focus-within:bg-surface-3 lg:h-11"
+        className="flex h-12 items-center gap-1 rounded-full bg-surface-2 pl-1.5 pr-1.5 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-within:bg-surface-3 lg:h-11"
       >
         <IconButton label="Open navigation" className="lg:hidden" onClick={onOpenSidebar}><MenuIcon className="size-5" /></IconButton>
         <Search className="ml-2.5 hidden size-4 shrink-0 text-fg-3 lg:block" aria-hidden />

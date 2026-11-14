@@ -3,7 +3,7 @@ import { singleKeysOff } from "@/lib/prefs";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertTriangle, Archive, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CornerUpLeft, Download, FileText, Forward, Image as ImageIcon,
-  Inbox, Mail, MailOpen, Maximize2, MoreHorizontal, Paperclip, Reply, ReplyAll, Send, ShieldAlert, Sparkles, Star, Tag, Trash2, Undo2, Wand2,
+  Inbox, Loader2, Mail, MailOpen, Maximize2, MoreHorizontal, Paperclip, Reply, ReplyAll, Send, ShieldAlert, Sparkles, Star, Tag, Trash2, Undo2, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -316,10 +316,10 @@ function MessageCard({ m, thread, defaultOpen }: { m: MessageDetail; thread: Thr
           </div>
           <button type="button" onClick={() => setDetails((v) => !v)} className="mt-0.5 flex max-w-full items-center gap-1 text-left text-[12.5px] text-fg-3 hover:text-fg-2" aria-expanded={details}>
             <span className="truncate">{m.from.email} → to: {toLine}{m.cc.length ? `, cc: ${m.cc.map(displayName).join(", ")}` : ""}</span>
-            <ChevronDown className={cn("size-3.5 shrink-0 transition-transform", details && "rotate-180")} aria-hidden />
+            <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", details && "rotate-180")} aria-hidden />
           </button>
           {details && (
-            <dl className="mt-2 grid grid-cols-[60px_1fr] gap-x-3 gap-y-1 rounded-lg bg-surface-2 p-3 text-[12.5px]">
+            <dl className="animate-reveal mt-2 grid grid-cols-[60px_1fr] gap-x-3 gap-y-1 rounded-lg bg-surface-2 p-3 text-[12.5px]">
               <dt className="text-fg-3">From</dt><dd className="break-all text-fg-2">{fmtAddr(m.from)}</dd>
               <dt className="text-fg-3">To</dt><dd className="break-all text-fg-2">{m.to.map(fmtAddr).join(", ") || "—"}</dd>
               {m.cc.length > 0 && <><dt className="text-fg-3">Cc</dt><dd className="break-all text-fg-2">{m.cc.map(fmtAddr).join(", ")}</dd></>}
@@ -549,7 +549,7 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
             )}
             {aiOn && (
               <button type="button" onClick={() => void generate()} disabled={generating} className="flex shrink-0 items-center gap-1.5 font-medium text-ai-title hover:brightness-125 disabled:opacity-50">
-                <Wand2 className={cn("size-3.5", generating && "animate-pulse")} aria-hidden />
+                {generating ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Wand2 className="size-3.5" aria-hidden />}
                 {generating ? "Writing…" : "Generate quick reply"}
               </button>
             )}
@@ -583,7 +583,7 @@ function QuickReply({ thread, message, suggestions, aiOn }: { thread: ThreadDeta
               type="submit"
               aria-label="Send reply"
               disabled={!text.trim() || sending}
-              className="ml-2 flex size-8 items-center justify-center rounded-full bg-accent text-white transition hover:brightness-110 disabled:opacity-40"
+              className="ml-2 flex size-8 items-center justify-center rounded-full bg-accent text-white transition-[filter] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:brightness-110 disabled:opacity-40"
             >
               <Send className="size-4" />
             </button>
