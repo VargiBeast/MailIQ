@@ -1,18 +1,13 @@
 import * as RD from "@radix-ui/react-dialog";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertTriangle, Archive, ArrowUp, Check, ChevronDown, FilePen, Inbox, Loader2, Mail, MailOpen, Search, Send, ShieldCheck,
-  Maximize2, Minimize2, Sparkles, Star, StarOff, Tag, Trash2, Undo2, X,
-} from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowUp, Loader2, Maximize2, Minimize2, ShieldCheck, Sparkles, X } from "lucide-react";
 import type { ThreadSummary } from "@shared/mail";
-import type { ActionResult, CopilotActionType, CopilotReply, ExecuteResult, PlanAction, PlanPreview } from "@shared/copilot";
-import { api, ApiError, errorMessage } from "@/lib/api";
+import type { CopilotReply, PlanPreview } from "@shared/copilot";
+import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/cn";
-import { displayName, listDate } from "@/lib/format";
-import { Button, IconButton } from "@/components/ui/Button";
 import { Kbd } from "@/components/ui/misc";
 import { useCopilot } from "./context";
 import { buildCopilotPlanBody, mapCopilotReply } from "./planRequest";

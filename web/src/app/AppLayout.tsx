@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { singleKeysOff } from "@/lib/prefs";
-import { Navigate, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import * as RD from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
