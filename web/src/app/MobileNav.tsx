@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
 import { Inbox, Menu, Pencil, Search, Sparkles, type LucideIcon } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import { useComposer } from "./composer/context";
 import { useCopilot } from "./copilot/context";
@@ -48,9 +49,7 @@ export function MobileNav() {
       "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent-ring)]",
       active ? "text-accent-ink" : "text-fg-3 active:text-fg-2",
     );
-  const glyph = (Icon: LucideIcon, active: boolean, className = "size-5") => (
-    <Icon className={className} aria-hidden strokeWidth={active ? 2.25 : 1.75} />
-  );
+  const glyph = (icon: LucideIcon, active: boolean) => <Icon icon={icon} size="lg" active={active} />;
 
   return (
     <nav
@@ -86,7 +85,7 @@ export function MobileNav() {
           aria-current={composeActive ? "page" : undefined}
         >
           <span className={cn("flex size-10 items-center justify-center rounded-full bg-accent text-accent-fg shadow-[0_4px_14px_-4px_var(--accent)]", composeActive && "ring-2 ring-accent-ink ring-offset-2 ring-offset-surface")}>
-            {glyph(Pencil, composeActive, "size-5")}
+            {glyph(Pencil, composeActive)}
           </span>
           Compose
         </button>

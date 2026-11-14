@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlarmClock, AlertCircle, CircleHelp, Hourglass, Inbox, Menu, MessageSquareReply, Pencil, Radar, RefreshCw, Sparkles, Star } from "lucide-react";
@@ -54,14 +55,14 @@ export function OverviewPage() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center gap-2 border-b border-line px-4 py-3 lg:px-8">
-        <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Menu className="size-5" /></IconButton>
-        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><OverviewIcon className="size-4 text-accent-ink" strokeWidth={1.75} aria-hidden /> AI Overview</h1>
+        <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Icon icon={Menu} size="lg" /></IconButton>
+        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><Icon icon={OverviewIcon} size="md" className="text-accent-ink" /> AI Overview</h1>
         <div className="ml-auto flex items-center gap-2">
           {d && <span className="hidden text-xs text-fg-3 sm:inline">Updated {relative(d.generatedAt)}</span>}
           <IconButton label="Refresh overview" onClick={() => void q.refetch()} disabled={q.isFetching}>
-            <RefreshCw className={cn("size-4", q.isFetching && "animate-spin")} />
+            <Icon icon={RefreshCw} className={q.isFetching ? "animate-spin" : undefined} />
           </IconButton>
-          <Button variant="ai" size="sm" icon={<Sparkles className="size-3.5" />} onClick={() => copilot.open()}>Ask Copilot</Button>
+          <Button variant="ai" size="sm" icon={<Icon icon={Sparkles} size="sm" />} onClick={() => copilot.open()}>Ask Copilot</Button>
         </div>
       </header>
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
@@ -76,22 +77,22 @@ export function OverviewPage() {
           {q.isLoading ? (
             <OverviewSkeleton />
           ) : q.isError ? (
-            <EmptyState icon={<AlertCircle className="size-5" />} title="Couldn't build your overview" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
+            <EmptyState icon={<Icon icon={AlertCircle} size="lg" />} title="Couldn't build your overview" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
           ) : d ? (
             <>
               <AiBriefing d={d} />
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Stat icon={<Inbox className="size-4" />} label="Unread (14 days)" value={d.stats.unread} to="/app/inbox?unread=1" />
-                <Stat icon={<MessageSquareReply className="size-4" />} label="Need a reply" value={d.stats.needsReply} to="/app/inbox?filter=unanswered" />
-                <Stat icon={<Hourglass className="size-4" />} label="Waiting on others" value={d.stats.waiting} to="/app/sent" />
-                <Stat icon={<Star className="size-4" />} label="Important & starred" value={d.stats.important} to="/app/important" />
+                <Stat icon={<Icon icon={Inbox} />} label="Unread (14 days)" value={d.stats.unread} to="/app/inbox?unread=1" />
+                <Stat icon={<Icon icon={MessageSquareReply} />} label="Need a reply" value={d.stats.needsReply} to="/app/inbox?filter=unanswered" />
+                <Stat icon={<Icon icon={Hourglass} />} label="Waiting on others" value={d.stats.waiting} to="/app/sent" />
+                <Stat icon={<Icon icon={Star} />} label="Important & starred" value={d.stats.important} to="/app/important" />
               </div>
               <FollowUpRadar waiting={d.waiting} questions={d.questions ?? []} aiOn={d.aiStatus !== "not_configured" && d.aiStatus !== "disabled"} />
               <div className="grid gap-4 lg:grid-cols-2">
-                <ThreadSection title="Needs your reply" icon={<MessageSquareReply className="size-4" />} threads={d.needsReply} empty="You're all caught up — nothing is waiting on you." />
-                <ThreadSection title="Waiting on others" icon={<Hourglass className="size-4" strokeWidth={1.75} aria-hidden />} threads={d.waiting} folder="sent" empty="No sent emails are waiting for an answer." note="You sent the last message more than 2 days ago." />
+                <ThreadSection title="Needs your reply" icon={<Icon icon={MessageSquareReply} />} threads={d.needsReply} empty="You're all caught up — nothing is waiting on you." />
+                <ThreadSection title="Waiting on others" icon={<Icon icon={Hourglass} />} threads={d.waiting} folder="sent" empty="No sent emails are waiting for an answer." note="You sent the last message more than 2 days ago." />
               </div>
-              <ThreadSection title="Important & starred" icon={<Star className="size-4" />} threads={d.important} empty="No important or starred conversations in the last two weeks." />
+              <ThreadSection title="Important & starred" icon={<Icon icon={Star} />} threads={d.important} empty="No important or starred conversations in the last two weeks." />
             </>
           ) : null}
         </div>
@@ -110,7 +111,7 @@ function AiBriefing({ d }: { d: OverviewData }) {
     }[d.aiStatus];
     return (
       <div className="rounded-[var(--radius-card)] border border-line bg-surface p-5 text-[13.5px] text-fg-2">
-        <p className="flex items-center gap-2 font-medium text-fg"><Sparkles className="size-4 text-accent-ink" /> AI briefing unavailable</p>
+        <p className="flex items-center gap-2 font-medium text-fg"><Icon icon={Sparkles} className="text-accent-ink" /> AI briefing unavailable</p>
         <p className="mt-1.5">{msg}</p>
         {d.aiStatus === "disabled" && <Link to="/app/settings/ai" className="mt-2 inline-block text-accent-ink hover:underline">Open AI settings</Link>}
       </div>
@@ -118,7 +119,7 @@ function AiBriefing({ d }: { d: OverviewData }) {
   }
   return (
     <section className="ai-block rounded-[var(--radius-card)] p-5" aria-labelledby="briefing">
-      <h3 id="briefing" className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-ai-title"><Sparkles className="size-4" /> Your briefing</h3>
+      <h3 id="briefing" className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-ai-title"><Icon icon={Sparkles} /> Your briefing</h3>
       <p className="mt-2 max-w-[68ch] text-[16px] leading-relaxed text-fg">{d.ai.headline}</p>
       {d.ai.items.length > 0 && (
         <ul className="mt-4 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface/60">
@@ -132,7 +133,7 @@ function AiBriefing({ d }: { d: OverviewData }) {
                     <span className="block truncate text-[13.5px] font-medium text-fg">{it.thread.subject || "(no subject)"}</span>
                     <span className="block text-[12.5px] text-fg-3">{it.reason}</span>
                   </span>
-                  {it.due && <span className="flex shrink-0 items-center gap-1 text-[12px] text-warning"><AlarmClock className="size-3.5" />{it.due}</span>}
+                  {it.due && <span className="flex shrink-0 items-center gap-1 text-[12px] text-warning"><Icon icon={AlarmClock} size="sm" />{it.due}</span>}
                 </Link>
               </li>
             );
@@ -224,7 +225,7 @@ function FollowUpRadar({ waiting, questions, aiOn }: { waiting: ThreadSummary[];
           <span className="block truncate text-[12.5px] text-fg-2">{t.subject || "(no subject)"}</span>
         </Link>
         {aiOn && (
-          <Button size="sm" variant="ai" loading={busy === key} disabled={busy !== null} icon={<Pencil className="size-3.5" strokeWidth={1.75} aria-hidden />} onClick={() => nudge.mutate({ t, kind })} aria-label={`${kind === "followup" ? "Draft nudge" : "Draft reply"}: ${t.subject}`}>
+          <Button size="sm" variant="ai" loading={busy === key} disabled={busy !== null} icon={<Icon icon={Pencil} size="sm" />} onClick={() => nudge.mutate({ t, kind })} aria-label={`${kind === "followup" ? "Draft nudge" : "Draft reply"}: ${t.subject}`}>
             {kind === "followup" ? "Nudge" : "Reply"}
           </Button>
         )}
@@ -234,16 +235,16 @@ function FollowUpRadar({ waiting, questions, aiOn }: { waiting: ThreadSummary[];
   return (
     <section aria-labelledby="radar" className="rounded-[var(--radius-card)] border border-[var(--ai-border)] bg-surface">
       <h3 id="radar" className="flex items-center gap-2 border-b border-line px-4 py-3 text-[13.5px] font-semibold text-fg">
-        <Radar className="size-4 text-accent-ink" /> Follow-up radar
+        <Icon icon={Radar} className="text-accent-ink" /> Follow-up radar
         <span className="ml-auto text-xs font-normal text-fg-3">{waiting.length + questions.length}</span>
       </h3>
       <div className="grid divide-y divide-line lg:grid-cols-2 lg:divide-x lg:divide-y-0">
         <div>
-          <p className="flex items-center gap-1.5 px-4 pt-3 text-[11.5px] font-medium uppercase tracking-wide text-fg-3"><Hourglass className="size-3" /> Waiting on a reply</p>
+          <p className="flex items-center gap-1.5 px-4 pt-3 text-[11.5px] font-medium uppercase tracking-wide text-fg-3"><Icon icon={Hourglass} size="xs" /> Waiting on a reply</p>
           {waiting.length ? <ul className="divide-y divide-line">{waiting.slice(0, 5).map((t) => row(t, "followup"))}</ul> : <p className="px-4 py-4 text-[12.5px] text-fg-3">Nobody owes you an answer right now.</p>}
         </div>
         <div>
-          <p className="flex items-center gap-1.5 px-4 pt-3 text-[11.5px] font-medium uppercase tracking-wide text-fg-3"><CircleHelp className="size-3" strokeWidth={1.75} aria-hidden /> Questions you haven’t answered</p>
+          <p className="flex items-center gap-1.5 px-4 pt-3 text-[11.5px] font-medium uppercase tracking-wide text-fg-3"><Icon icon={CircleHelp} size="xs" /> Questions you haven’t answered</p>
           {questions.length ? <ul className="divide-y divide-line">{questions.slice(0, 5).map((t) => row(t, "reply"))}</ul> : <p className="px-4 py-4 text-[12.5px] text-fg-3">No open questions. Nice.</p>}
         </div>
       </div>

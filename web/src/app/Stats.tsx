@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, BarChart3, Inbox, Menu, RefreshCw, Send, Timer, TriangleAlert } from "lucide-react";
@@ -39,8 +40,8 @@ export function StatsPage() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 lg:px-8">
-        <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Menu className="size-5" /></IconButton>
-        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><BarChart3 className="size-4 text-accent-400" /> Inbox stats</h1>
+        <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Icon icon={Menu} size="lg" /></IconButton>
+        <h1 className="flex items-center gap-2 text-[17px] font-semibold text-fg"><Icon icon={BarChart3} className="text-accent-400" /> Inbox stats</h1>
         {accountEmail && <span className="truncate text-[12.5px] text-fg-3">{accountEmail}</span>}
         <div className="ml-auto flex items-center gap-2">
           <div role="radiogroup" aria-label="Time range" className="inline-flex rounded-lg border border-line bg-surface-2 p-0.5">
@@ -51,7 +52,7 @@ export function StatsPage() {
             ))}
           </div>
           <IconButton label="Refresh stats" onClick={() => void q.refetch()} disabled={q.isFetching}>
-            <RefreshCw className={cn("size-4", q.isFetching && "animate-spin")} />
+            <Icon icon={RefreshCw} className={q.isFetching ? "animate-spin" : undefined} />
           </IconButton>
         </div>
       </header>
@@ -60,19 +61,19 @@ export function StatsPage() {
           {q.isLoading ? (
             <StatsSkeleton />
           ) : q.isError ? (
-            <EmptyState icon={<AlertCircle className="size-5" />} title="Couldn't load your stats" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
+            <EmptyState icon={<Icon icon={AlertCircle} size="lg" />} title="Couldn't load your stats" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
           ) : d ? (
             <>
               {d.errors.length > 0 && (
                 <p className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-                  <TriangleAlert className="size-4 text-warning" strokeWidth={1.75} aria-hidden /> Some accounts couldn't be read: {d.errors.map((e) => e.message).join(" ")}
+                  <Icon icon={TriangleAlert} className="text-warning" /> Some accounts couldn't be read: {d.errors.map((e) => e.message).join(" ")}
                 </p>
               )}
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Kpi icon={<Inbox className="size-4" />} label="Received" value={d.totals.received.toLocaleString()} />
-                <Kpi icon={<Send className="size-4" />} label="Sent" value={d.totals.sent.toLocaleString()} />
-                <Kpi icon={<Timer className="size-4" />} label="Average response" value={formatDuration(d.response.averageMinutes)} hint={d.response.replies ? `${d.response.replies} replies` : "No replies yet"} />
-                <Kpi icon={<Timer className="size-4" strokeWidth={1.75} aria-hidden />} label="Median response" value={formatDuration(d.response.medianMinutes)} hint="Half your replies are faster" />
+                <Kpi icon={<Icon icon={Inbox} />} label="Received" value={d.totals.received.toLocaleString()} />
+                <Kpi icon={<Icon icon={Send} />} label="Sent" value={d.totals.sent.toLocaleString()} />
+                <Kpi icon={<Icon icon={Timer} />} label="Average response" value={formatDuration(d.response.averageMinutes)} hint={d.response.replies ? `${d.response.replies} replies` : "No replies yet"} />
+                <Kpi icon={<Icon icon={Timer} />} label="Median response" value={formatDuration(d.response.medianMinutes)} hint="Half your replies are faster" />
               </div>
               <VolumeChart d={d} />
               <div className="grid gap-5 lg:grid-cols-2">

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Icon } from "@/components/ui/Icon";
 import { BellRing, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import type { ThreadDetail } from "@shared/mail";
@@ -29,18 +30,18 @@ export function SnoozeMenu({ thread, onSnoozed }: { thread: ThreadDetail; onSnoo
   in7.setHours(9, 0, 0, 0);
   return (
     <Menu>
-      <MenuTrigger asChild><IconButton label="Snooze or remind (z)" data-snooze-trigger=""><Clock className="size-[18px]" /></IconButton></MenuTrigger>
+      <MenuTrigger asChild><IconButton label="Snooze or remind (z)" data-snooze-trigger=""><Icon icon={Clock} size="lg" /></IconButton></MenuTrigger>
       <MenuContent>
         <MenuLabel>Snooze until…</MenuLabel>
         {presets.map((p) => (
-          <MenuItem key={p.id} icon={<Clock />} onSelect={() => set.mutate({ until: p.until, kind: "snooze" })}>
+          <MenuItem key={p.id} icon={<Icon icon={Clock} />} onSelect={() => set.mutate({ until: p.until, kind: "snooze" })}>
             <span className="flex-1">{p.label}</span><span className="ml-4 text-[11.5px] text-fg-3">{formatDue(p.until.toISOString())}</span>
           </MenuItem>
         ))}
         <MenuSeparator />
         <MenuLabel>Remind me if no reply</MenuLabel>
-        <MenuItem icon={<BellRing />} onSelect={() => set.mutate({ until: in3, kind: "remind" })}>In 3 days</MenuItem>
-        <MenuItem icon={<BellRing />} onSelect={() => set.mutate({ until: in7, kind: "remind" })}>In a week</MenuItem>
+        <MenuItem icon={<Icon icon={BellRing} />} onSelect={() => set.mutate({ until: in3, kind: "remind" })}>In 3 days</MenuItem>
+        <MenuItem icon={<Icon icon={BellRing} />} onSelect={() => set.mutate({ until: in7, kind: "remind" })}>In a week</MenuItem>
       </MenuContent>
     </Menu>
   );
@@ -61,10 +62,10 @@ export function SnoozeBanner({ thread }: { thread: ThreadDetail }) {
   if (!row) return null;
   return (
     <div role="status" className="mx-4 mt-3 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[12.5px] text-fg-2 animate-in">
-      {row.kind === "snooze" ? <Clock className="size-3.5 text-accent-ink" /> : <BellRing className="size-3.5 text-accent-ink" />}
+      {row.kind === "snooze" ? <Icon icon={Clock} size="sm" className="text-accent-ink" /> : <Icon icon={BellRing} size="sm" className="text-accent-ink" />}
       <span className="flex-1">{row.kind === "snooze" ? `Snoozed until ${formatDue(row.dueAt)}` : `Reminder ${formatDue(row.dueAt)} if nobody replies`}</span>
       <button type="button" onClick={() => cancel.mutate()} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-fg-3 hover:bg-surface-3 hover:text-fg">
-        <X className="size-3" /> {row.kind === "snooze" ? "Unsnooze" : "Cancel reminder"}
+        <Icon icon={X} size="xs" /> {row.kind === "snooze" ? "Unsnooze" : "Cancel reminder"}
       </button>
     </div>
   );

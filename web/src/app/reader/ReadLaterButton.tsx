@@ -1,4 +1,5 @@
 import { Bookmark, BookmarkCheck } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { toast } from "sonner";
 import type { ThreadDetail } from "@shared/mail";
 import { IconButton } from "@/components/ui/Button";
@@ -13,7 +14,7 @@ export function ReadLaterButton({ thread }: { thread: ThreadDetail }) {
   });
   return (
     <IconButton label="Read later (b)" aria-pressed={saved} onClick={run} data-read-later-trigger="">
-      {saved ? <BookmarkCheck className="size-5 text-accent-ink" strokeWidth={2.25} aria-hidden /> : <Bookmark className="size-5" strokeWidth={1.75} aria-hidden />}
+      {saved ? <Icon icon={BookmarkCheck} size="lg" active className="text-accent-ink" /> : <Icon icon={Bookmark} size="lg" />}
     </IconButton>
   );
 }

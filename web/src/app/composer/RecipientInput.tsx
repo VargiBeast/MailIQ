@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -32,7 +33,7 @@ export function RecipientInput({ label, values, onChange, autoFocus, id }: { lab
             <span key={v} className={cn("inline-flex max-w-full items-center gap-1 rounded-md px-2 py-0.5 text-[12.5px]", ok ? "bg-surface-3 text-fg" : "bg-danger/15 text-danger")} title={ok ? v : "Invalid address"}>
               <span className="truncate">{v}</span>
               <Tooltip content={`Remove ${v}`}>
-                <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))} className="inline-flex items-center justify-center text-fg-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11"><X className="size-3" strokeWidth={1.75} aria-hidden /></button>
+                <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))} className="inline-flex items-center justify-center text-fg-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11"><Icon icon={X} size="xs" /></button>
               </Tooltip>
             </span>
           );

@@ -1,5 +1,6 @@
 import * as RD from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useMatch, useNavigate } from "react-router-dom";
 import { ACCENTS } from "@shared/settings";
 import { FOCUS_CHOICES } from "@shared/focus";
@@ -15,8 +16,8 @@ import { useShortcutsDialog } from "./Shortcuts";
 import { FOLDER_META, OverviewIcon } from "./nav";
 import { filterCommands, type Command } from "./commands";
 
-function ico(Icon: LucideIcon) {
-  return <Icon className="size-4" strokeWidth={1.75} aria-hidden />;
+function ico(icon: LucideIcon) {
+  return <Icon icon={icon} size="md" />;
 }
 
 interface Runnable extends Command {
@@ -146,7 +147,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
         >
           <RD.Title className="sr-only">Command palette</RD.Title>
           <div className="flex items-center gap-2 border-b border-line px-4">
-            <Search className="size-4 text-fg-3" strokeWidth={1.75} aria-hidden />
+            <Icon icon={Search} className="text-fg-3" />
             <input
               autoFocus
               value={q}
@@ -187,7 +188,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                     <span className={cn("inline-flex", c.group === "Copilot" ? "text-accent-ink" : "text-fg-3")}>{c.icon}</span>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>
                     {c.shortcut && <kbd className="rounded border border-line px-1.5 text-[10.5px] text-fg-3">{c.shortcut}</kbd>}
-                    {i === active && <CornerDownLeft className="size-3.5 text-fg-3" strokeWidth={1.75} aria-hidden />}
+                    {i === active && <Icon icon={CornerDownLeft} size="sm" className="text-fg-3" />}
                   </div>
                 ))}
               </div>

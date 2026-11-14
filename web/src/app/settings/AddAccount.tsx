@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, Server } from "lucide-react";
@@ -26,21 +27,21 @@ export function AddAccountDialog({ open, onOpenChange }: { open: boolean; onOpen
       {!choice ? (
         <div className="space-y-2">
           <button type="button" className={option} onClick={() => { window.location.href = "/api/auth/google/start?mode=link"; }}>
-            <Mail className="size-4 text-fg-3" aria-hidden /> Gmail or Google Workspace
+            <Icon icon={Mail} className="text-fg-3" /> Gmail or Google Workspace
           </button>
           <button type="button" className={option} disabled={!config?.microsoft} aria-describedby={config?.microsoft ? undefined : "outlook-not-configured"}
             onClick={() => { window.location.href = "/api/auth/microsoft/start"; }}>
-            <Mail className="size-4 text-fg-3" aria-hidden />
+            <Icon icon={Mail} className="text-fg-3" />
             <span className="flex-1">Outlook or Microsoft 365</span>
             {!config?.microsoft && <span id="outlook-not-configured" className="text-[12px] text-fg-3">Not configured</span>}
           </button>
           {(providers.data?.imapPresets ?? []).map((p) => (
             <button key={p.id} type="button" className={option} onClick={() => setChoice({ kind: "preset", preset: p })}>
-              <Mail className="size-4 text-fg-3" aria-hidden /> {p.label}
+              <Icon icon={Mail} className="text-fg-3" /> {p.label}
             </button>
           ))}
           <button type="button" className={option} onClick={() => setChoice({ kind: "other" })}>
-            <Server className="size-4 text-fg-3" aria-hidden /> Other mail (IMAP/SMTP)
+            <Icon icon={Server} className="text-fg-3" /> Other mail (IMAP/SMTP)
           </button>
         </div>
       ) : choice.kind === "google" ? null : (
@@ -103,7 +104,7 @@ function ImapForm({ choice, onBack, onDone }: { choice: Exclude<Choice, { kind: 
         </>
       )}
       <div className="flex justify-between gap-2 pt-1">
-        <Button icon={<ArrowLeft className="size-3.5" />} onClick={onBack}>Back</Button>
+        <Button icon={<Icon icon={ArrowLeft} size="sm" />} onClick={onBack}>Back</Button>
         <Button type="submit" variant="primary" loading={connect.isPending}>Connect</Button>
       </div>
     </form>

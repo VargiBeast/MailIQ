@@ -1,4 +1,5 @@
 import { Target } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { FOCUS_CHOICES } from "@shared/focus";
 import { FOCUS_LABELS, focusUntilLabel, useFocusMode } from "@/lib/focus";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "@/components/ui/Menu";
@@ -9,7 +10,7 @@ export function FocusBanner() {
   if (!focus.active || !focus.until) return null;
   return (
     <div role="region" aria-label="Focus mode" className="flex items-center gap-3 border-b border-line bg-accent-soft px-4 py-2 text-[13px] text-fg">
-      <Target className="size-4 shrink-0 text-accent-ink" aria-hidden />
+      <Icon icon={Target} className="shrink-0 text-accent-ink" />
       <p className="min-w-0 flex-1">
         <span className="font-medium">Focus mode is on</span>
         <span className="text-fg-2"> · Only important mail is shown in your inbox, and new-mail alerts are paused {focusUntilLabel(focus.until)}.</span>
@@ -28,7 +29,7 @@ export function FocusMenu({ className }: { className: string }) {
     <Menu>
       <MenuTrigger asChild>
         <button type="button" className={className}>
-          <Target className="size-4" aria-hidden />
+          <Icon icon={Target} />
           <span className="flex-1 text-left">Focus mode</span>
           {focus.active && focus.until && <span className="text-[11px] text-accent-ink">{focusUntilLabel(focus.until)}</span>}
         </button>

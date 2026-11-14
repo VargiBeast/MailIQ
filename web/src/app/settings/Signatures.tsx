@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { toast } from "sonner";
@@ -36,7 +37,7 @@ function AccountIdentities({ account }: { account: SendAsAccount }) {
     <section className="rounded-[var(--radius-card)] border border-line bg-surface" aria-label={`Send-as settings for ${account.email}`}>
       <div className="border-b border-line px-5 py-4">
         <h2 className="text-[14.5px] font-semibold text-fg">{account.email}</h2>
-        {account.error && <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-warning"><TriangleAlert className="size-3.5" />{account.error.message}</p>}
+        {account.error && <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-warning"><Icon icon={TriangleAlert} size="sm" />{account.error.message}</p>}
       </div>
       <div className="divide-y divide-line px-5">
         {account.identities.map((i) => <IdentityEditor key={i.sendAsEmail} accountId={account.accountId} identity={i} />)}
@@ -86,14 +87,14 @@ function IdentityEditor({ accountId, identity }: { accountId: string; identity: 
         <div className="flex items-center justify-between gap-2">
           <p className="text-[13px] font-medium text-fg-2">Gmail signature</p>
           {!editing && (
-            <Button size="sm" icon={<Pencil className="size-3.5" />} onClick={() => (lossy ? setConfirmLossy(true) : setEditing(true))}>
+            <Button size="sm" icon={<Icon icon={Pencil} size="sm" />} onClick={() => (lossy ? setConfirmLossy(true) : setEditing(true))}>
               {empty ? "Add signature" : "Edit signature"}
             </Button>
           )}
         </div>
         {confirmLossy && !editing && (
           <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-            <TriangleAlert className="size-4 text-warning" aria-hidden />
+            <Icon icon={TriangleAlert} className="text-warning" />
             <span className="flex-1">This signature has images or custom styling. The MailIQ editor keeps text, bold, italic, lists and links only; saving here removes the rest.</span>
             <Button size="sm" variant="ghost" onClick={() => setConfirmLossy(false)}>Keep it</Button>
             <Button size="sm" onClick={() => { setConfirmLossy(false); setEditing(true); }}>Edit anyway</Button>
@@ -168,11 +169,11 @@ function SignatureEditor({ initial, saving, onSave, onCancel }: { initial: strin
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-surface-2 focus-within:border-accent">
       <div className="flex items-center gap-0.5 border-b border-line px-2 py-1" role="toolbar" aria-label="Signature formatting">
-        <IconButton label="Bold" size="sm" active={editor.isActive("bold")} aria-pressed={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold className="size-4" strokeWidth={editor.isActive("bold") ? 2.25 : 1.75} aria-hidden /></IconButton>
-        <IconButton label="Italic" size="sm" active={editor.isActive("italic")} aria-pressed={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic className="size-4" strokeWidth={editor.isActive("italic") ? 2.25 : 1.75} aria-hidden /></IconButton>
-        <IconButton label="Underline" size="sm" active={editor.isActive("underline")} aria-pressed={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}><Underline className="size-4" strokeWidth={editor.isActive("underline") ? 2.25 : 1.75} aria-hidden /></IconButton>
-        <IconButton label="Bulleted list" size="sm" active={editor.isActive("bulletList")} aria-pressed={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}><List className="size-4" strokeWidth={editor.isActive("bulletList") ? 2.25 : 1.75} aria-hidden /></IconButton>
-        <IconButton label="Link" size="sm" active={editor.isActive("link")} aria-pressed={editor.isActive("link")} onClick={link}><Link2 className="size-4" strokeWidth={editor.isActive("link") ? 2.25 : 1.75} aria-hidden /></IconButton>
+        <IconButton label="Bold" size="sm" active={editor.isActive("bold")} aria-pressed={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Icon icon={Bold} active={editor.isActive("bold")} /></IconButton>
+        <IconButton label="Italic" size="sm" active={editor.isActive("italic")} aria-pressed={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Icon icon={Italic} active={editor.isActive("italic")} /></IconButton>
+        <IconButton label="Underline" size="sm" active={editor.isActive("underline")} aria-pressed={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}><Icon icon={Underline} active={editor.isActive("underline")} /></IconButton>
+        <IconButton label="Bulleted list" size="sm" active={editor.isActive("bulletList")} aria-pressed={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}><Icon icon={List} active={editor.isActive("bulletList")} /></IconButton>
+        <IconButton label="Link" size="sm" active={editor.isActive("link")} aria-pressed={editor.isActive("link")} onClick={link}><Icon icon={Link2} active={editor.isActive("link")} /></IconButton>
       </div>
       <EditorContent editor={editor} />
       <div className="flex justify-end gap-2 border-t border-line px-3 py-2">

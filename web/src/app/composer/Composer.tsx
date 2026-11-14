@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -155,7 +156,7 @@ function Composer({ request, onClose }: { request: ComposeRequest & { key: numbe
   if (!init) {
     return (
       <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-fg-2 shadow-[var(--shadow)]" role="status" aria-busy="true">
-        <Loader2 className="size-4 animate-spin" aria-hidden /> Opening draft…
+        <Icon icon={Loader2} className="animate-spin" /> Opening draft…
       </div>
     );
   }
@@ -409,9 +410,9 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved to Drafts" : saveState === "error" ? "Not saved" : ""}
         </span>
         <IconButton label={maximized ? "Restore size" : "Maximize"} size="sm" className="hidden sm:inline-flex" onClick={() => setMaximized((v) => !v)}>
-          {maximized ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          {maximized ? <Icon icon={Minimize2} /> : <Icon icon={Maximize2} />}
         </IconButton>
-        <IconButton label="Close (saves draft)" size="sm" onClick={() => void close()}><X className="size-4" /></IconButton>
+        <IconButton label="Close (saves draft)" size="sm" onClick={() => void close()}><Icon icon={X} /></IconButton>
       </div>
 
       {accounts.length > 1 && (
@@ -444,11 +445,11 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       <div className="min-h-0 flex-1 overflow-y-auto scroll-thin" onClick={() => editor?.commands.focus()}>
         {aiGenerated && (
           <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-1.5 text-[12px] text-ai-title">
-            <Sparkles className="size-3.5" aria-hidden />
+            <Icon icon={Sparkles} size="sm" />
             <span className="flex-1">Contains AI-written text. You'll be asked to confirm before sending.</span>
             {undoHtml !== null && (
               <button type="button" className="flex items-center gap-1 font-medium hover:underline" onClick={(e) => { e.stopPropagation(); editor?.commands.setContent(undoHtml); setUndoHtml(null); }}>
-                <Undo2 className="size-3" /> Undo AI
+                <Icon icon={Undo2} size="xs" /> Undo AI
               </button>
             )}
           </div>
@@ -458,11 +459,11 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
             <span className="flex-1">Drafted from your voice command. It's saved in Drafts and won't be sent unless you press Send.</span>
           </div>
         )}
-        <EditorContent editor={editor} />
+        <Icon icon={EditorContent} editor={editor} />
         {init.quote && (
           <div className="px-4 pb-3">
             <button type="button" onClick={(e) => { e.stopPropagation(); setIncludeQuote((v) => !v); }} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-pressed={includeQuote}>
-              {includeQuote && <Check className="size-3.5" strokeWidth={2.25} aria-hidden />}
+              {includeQuote && <Icon icon={Check} size="sm" active />}
               {includeQuote ? (mode === "forward" ? "Forwarded message included" : "Quoted text included") : "Quoted text removed — click to include"}
             </button>
           </div>
@@ -471,11 +472,11 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
           <ul className="flex flex-wrap gap-2 px-4 pb-4" aria-label="Attachments">
             {attachments.map((a, i) => (
               <li key={`${a.filename}-${i}`} className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12.5px]">
-                <FileText className="size-3.5 text-fg-3" aria-hidden />
+                <Icon icon={FileText} size="sm" className="text-fg-3" />
                 <span className="max-w-[180px] truncate text-fg">{a.filename}</span>
                 <span className="text-fg-3">{formatBytes(a.size)}</span>
                 <Tooltip content={`Remove ${a.filename}`}>
-                  <button type="button" aria-label={`Remove ${a.filename}`} className="inline-flex items-center justify-center text-fg-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={(e) => { e.stopPropagation(); setAttachments(attachments.filter((_, j) => j !== i)); setDirty(true); }}><X className="size-3.5" strokeWidth={1.75} aria-hidden /></button>
+                  <button type="button" aria-label={`Remove ${a.filename}`} className="inline-flex items-center justify-center text-fg-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={(e) => { e.stopPropagation(); setAttachments(attachments.filter((_, j) => j !== i)); setDirty(true); }}><Icon icon={X} size="sm" /></button>
                 </Tooltip>
               </li>
             ))}
@@ -484,18 +485,18 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-line px-3 py-2.5">
-        <Button variant="primary" onClick={() => void send(false)} loading={sending} icon={<Send className="size-4" />}>Send</Button>
+        <Button variant="primary" onClick={() => void send(false)} loading={sending} icon={<Icon icon={Send} />}>Send</Button>
         <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { void addFiles(e.target.files); e.target.value = ""; }} aria-label="Attach files" />
-        <IconButton label="Attach files" onClick={() => fileRef.current?.click()}><Paperclip className="size-[18px]" /></IconButton>
-        <IconButton label={`Insert template (${TEMPLATE_SHORTCUT_LABEL})`} onClick={() => setTemplatesOpen(true)}><FileStack className="size-[18px]" /></IconButton>
+        <IconButton label="Attach files" onClick={() => fileRef.current?.click()}><Icon icon={Paperclip} size="lg" /></IconButton>
+        <IconButton label={`Insert template (${TEMPLATE_SHORTCUT_LABEL})`} onClick={() => setTemplatesOpen(true)}><Icon icon={FileStack} size="lg" /></IconButton>
         <MicButton onText={(t) => editor?.chain().focus().insertContent({ type: "text", text: `${t} ` }).run()} />
         {aiOn && (
           <>
-            <Button variant="ai" size="md" icon={<Sparkles className="size-3.5" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
+            <Button variant="ai" size="md" icon={<Icon icon={Sparkles} size="sm" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
             <Menu>
               <MenuTrigger asChild>
-                <Button variant="ghost" size="md" loading={aiBusy} icon={<Wand2 className="size-3.5" strokeWidth={1.75} aria-hidden />}>
-                  Rewrite <ChevronDown className="size-3.5" strokeWidth={1.75} aria-hidden />
+                <Button variant="ghost" size="md" loading={aiBusy} icon={<Icon icon={Wand2} size="sm" />}>
+                  Rewrite <Icon icon={ChevronDown} size="sm" />
                 </Button>
               </MenuTrigger>
               <MenuContent align="start">
@@ -513,8 +514,8 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
         )}
         <div className="flex-1" />
         {accountEmail && accounts.length > 1 && <span className="hidden max-w-[160px] truncate text-[11.5px] text-fg-3 sm:inline">{accountEmail}</span>}
-        <IconButton label="Save draft now" onClick={() => void saveDraft(false)}><FileText className="size-[18px]" /></IconButton>
-        <IconButton label="Discard draft" onClick={() => setConfirmDiscard(true)}><Trash2 className="size-[18px]" /></IconButton>
+        <IconButton label="Save draft now" onClick={() => void saveDraft(false)}><Icon icon={FileText} size="lg" /></IconButton>
+        <IconButton label="Discard draft" onClick={() => setConfirmDiscard(true)}><Icon icon={Trash2} size="lg" /></IconButton>
       </div>
 
       <TemplatePicker
@@ -577,19 +578,19 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   );
   return (
     <div className="flex shrink-0 items-center gap-0.5 border-b border-line px-3 py-1" role="toolbar" aria-label="Formatting">
-      {btn("Bold", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Bold className="size-4" />)}
-      {btn("Italic", editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Italic className="size-4" />)}
-      {btn("Underline", editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), <Underline className="size-4" />)}
+      {btn("Bold", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Icon icon={Bold} active={editor.isActive("bold")} />)}
+      {btn("Italic", editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Icon icon={Italic} active={editor.isActive("italic")} />)}
+      {btn("Underline", editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), <Icon icon={Underline} active={editor.isActive("underline")} />)}
       <span className="mx-1 h-4 w-px bg-line" aria-hidden />
-      {btn("Bulleted list", editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <List className="size-4" />)}
-      {btn("Numbered list", editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered className="size-4" />)}
-      {btn("Quote", editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Quote className="size-4" />)}
+      {btn("Bulleted list", editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <Icon icon={List} active={editor.isActive("bulletList")} />)}
+      {btn("Numbered list", editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <Icon icon={ListOrdered} active={editor.isActive("orderedList")} />)}
+      {btn("Quote", editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Icon icon={Quote} active={editor.isActive("blockquote")} />)}
       {btn("Link", editor.isActive("link"), () => {
         if (editor.isActive("link")) return editor.chain().focus().unsetLink().run();
         const url = window.prompt("Link URL (https://…)");
         if (url && /^(https?:\/\/|mailto:)/i.test(url)) editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
         else if (url) toast.error("Links must start with https://, http:// or mailto:");
-      }, <Link2 className="size-4" />)}
+      }, <Icon icon={Link2} active={editor.isActive("link")} />)}
     </div>
   );
 }
@@ -632,7 +633,7 @@ function AiWriteDialog({ open, onOpenChange, threadContext, mode, onResult }: {
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={busy} icon={<Sparkles className="size-4" />} disabled={!instruction.trim() && mode !== "reply"}>Generate</Button>
+          <Button type="submit" variant="primary" loading={busy} icon={<Icon icon={Sparkles} />} disabled={!instruction.trim() && mode !== "reply"}>Generate</Button>
         </div>
       </form>
     </Dialog>

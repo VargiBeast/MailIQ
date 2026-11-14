@@ -1,5 +1,6 @@
 import * as RD from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "./Button";
@@ -55,7 +56,7 @@ export function Dialog({
                 )}
                 aria-label="Close"
               >
-                <X className="size-4" strokeWidth={1.75} aria-hidden />
+                <Icon icon={X} />
               </RD.Close>
             </Tooltip>
           </div>

@@ -1,18 +1,8 @@
 import * as DM from "@radix-ui/react-dropdown-menu";
-import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-/** md icon token (16px) and the default stroke, applied on the glyph rather than a parent size override. */
-function menuIcon(icon: ReactNode) {
-  if (!isValidElement(icon)) return icon;
-  const el = icon as ReactElement<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
-  return cloneElement(el, {
-    className: cn("size-4", el.props.className),
-    strokeWidth: el.props.strokeWidth ?? 1.75,
-    "aria-hidden": el.props["aria-hidden"] ?? true,
-  });
-}
 
 export const Menu = DM.Root;
 export const MenuTrigger = DM.Trigger;
@@ -67,7 +57,7 @@ export function MenuItem({
         danger ? "text-danger data-[highlighted]:bg-danger/10" : "text-fg-2 data-[highlighted]:text-fg",
       )}
     >
-      {icon && <span className="inline-flex shrink-0 text-fg-3">{menuIcon(icon)}</span>}
+      {icon && <span className="inline-flex shrink-0 text-fg-3">{icon}</span>}
       {children}
     </DM.Item>
   );
@@ -100,7 +90,7 @@ export function MenuCheckbox({
         )}
         aria-hidden
       >
-        {checked && <Check className="size-3" strokeWidth={2.25} aria-hidden />}
+        {checked && <Icon icon={Check} size="xs" active />}
       </span>
       {children}
     </DM.CheckboxItem>

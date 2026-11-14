@@ -1,4 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Tooltip } from "./Tooltip";
@@ -51,7 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       )}
       {...rest}
     >
-      {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : icon}
+      {loading ? <Icon icon={Loader2} className="animate-spin" /> : icon}
       {loading ? "Loading…" : children}
     </button>
   );

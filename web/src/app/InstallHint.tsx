@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { X } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 
@@ -44,7 +45,7 @@ export function InstallHint() {
             setDismissed(true);
           }}
         >
-          <X className="size-4" strokeWidth={1.75} aria-hidden />
+          <Icon icon={X} />
         </button>
       </Tooltip>
     </div>

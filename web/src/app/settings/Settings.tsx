@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Link, NavLink, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -58,9 +59,9 @@ export function SettingsPage() {
   const location = useLocation();
   const sections = useSections();
   if (!section) return <SettingsIndex />;
-  if (MOVED[section]) return <Navigate to={MOVED[section] + (MOVED[section].includes("#") ? "" : location.search)} replace />;
+  if (MOVED[section]) return <Icon icon={Navigate} to={MOVED[section] + (MOVED[section].includes("#") ? "" : location.search)} replace />;
   const meta = sections.find((s) => s.id === section);
-  if (!meta) return <Navigate to="/app/settings/general" replace />;
+  if (!meta) return <Icon icon={Navigate} to="/app/settings/general" replace />;
   return (
     <div className="flex h-full min-h-0">
       <nav aria-label="Settings sections" className="hidden w-[248px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 scroll-thin lg:flex">
@@ -70,7 +71,7 @@ export function SettingsPage() {
           <NavLink key={s.id} to={`/app/settings/${s.id}`} className={({ isActive }) => cn("flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-[13.5px] transition-colors duration-[var(--duration-fast)] pointer-coarse:min-h-11", isActive ? "bg-accent-soft font-medium text-fg ring-1 ring-inset ring-[var(--ai-border)]" : "text-fg-2 hover:bg-surface-2 hover:text-fg")}>
             {({ isActive }) => (
               <>
-                <s.icon className="size-4 text-fg-3" strokeWidth={isActive ? 2.25 : 1.75} aria-hidden />
+                <Icon icon={s.icon} size="md" active={isActive} className="text-fg-3" />
                 {s.label}
               </>
             )}
@@ -93,8 +94,8 @@ export function SettingsPage() {
 export function PageHeader({ title, onBack }: { title: string; onBack?: () => void }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 px-3 md:px-8">
-      {onBack && <IconButton label="Back to settings" className="lg:hidden" onClick={onBack}><ArrowLeft className="size-5" strokeWidth={1.75} aria-hidden /></IconButton>}
-      {!onBack && <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Menu className="size-5" strokeWidth={1.75} aria-hidden /></IconButton>}
+      {onBack && <IconButton label="Back to settings" className="lg:hidden" onClick={onBack}><Icon icon={ArrowLeft} size="lg" /></IconButton>}
+      {!onBack && <IconButton label="Open navigation" className="lg:hidden" onClick={() => SidebarContext.open()}><Icon icon={Menu} size="lg" /></IconButton>}
       <h1 className="min-w-0 flex-1 truncate text-[18px] font-semibold text-fg">{title}</h1>
       <SavedIndicator />
     </header>
@@ -112,7 +113,7 @@ export function SavedIndicator() {
   }, []);
   return (
     <span role="status" aria-live="polite" className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] font-medium text-success transition-opacity", shown ? "opacity-100" : "opacity-0")}>
-      {shown ? <><Check className="size-3.5" aria-hidden />Saved</> : null}
+      {shown ? <><Icon icon={Check} size="sm" />Saved</> : null}
     </span>
   );
 }
@@ -128,7 +129,7 @@ function AccountLink({ compact = false }: { compact?: boolean }) {
         <span className={cn("block truncate font-medium text-fg", compact ? "text-[13px]" : "text-[15px]")}>{name}</span>
         <span className="block truncate text-[12px] text-fg-3">Account, connected Gmail, sessions</span>
       </span>
-      <ChevronRight className="size-4 shrink-0 text-fg-3" aria-hidden />
+      <Icon icon={ChevronRight} className="shrink-0 text-fg-3" />
     </Link>
   );
 }
@@ -136,11 +137,11 @@ function AccountLink({ compact = false }: { compact?: boolean }) {
 function SettingsIndex() {
   const sections = useSections();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  if (isDesktop) return <Navigate to="/app/settings/general" replace />;
+  if (isDesktop) return <Icon icon={Navigate} to="/app/settings/general" replace />;
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-14 shrink-0 items-center gap-2 px-3">
-        <IconButton label="Open navigation" onClick={() => SidebarContext.open()}><Menu className="size-5" /></IconButton>
+        <IconButton label="Open navigation" onClick={() => SidebarContext.open()}><Icon icon={Menu} size="lg" /></IconButton>
         <h1 className="text-[20px] font-semibold text-fg">Settings</h1>
       </header>
       <div className="scroll-thin min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-8 pt-1">
@@ -148,9 +149,9 @@ function SettingsIndex() {
         <nav aria-label="Settings sections" className="overflow-hidden rounded-2xl bg-surface">
           {sections.map((s, i) => (
             <Link key={s.id} to={`/app/settings/${s.id}`} className="flex items-center gap-3 px-4 hover:bg-surface-2">
-              <s.icon className="size-[18px] shrink-0 text-fg-2" aria-hidden />
+              <Icon icon={s.icon} size="lg" className="shrink-0 text-fg-2" />
               <span className={cn("flex min-h-[50px] flex-1 items-center justify-between gap-2 text-[15px] text-fg", i > 0 && "border-t border-line")}>
-                {s.label}<ChevronRight className="size-4 text-fg-3" aria-hidden />
+                {s.label}<Icon icon={ChevronRight} className="text-fg-3" />
               </span>
             </Link>
           ))}
@@ -440,7 +441,7 @@ function PrivacySection() {
   return (
     <>
       <div className="ai-block flex gap-3 rounded-[var(--radius-card)] p-4 text-[13px] text-fg-2">
-        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent-ink" />
+        <Icon icon={ShieldCheck} size="lg" className="mt-0.5 shrink-0 text-accent-ink" />
         <p>MailIQ never stores your email bodies. Mail is read live from your connected provider. When you use an AI feature, only the emails needed are sent to the AI provider ({aiProviderName(config?.aiProvider)}), which processes them under its API terms. Everything the AI accessed is listed below. Read the <Link to="/privacy" className="text-accent-ink hover:underline">privacy policy</Link>.</p>
       </div>
 
@@ -450,7 +451,7 @@ function PrivacySection() {
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); addSender(); }}>
             <label htmlFor="exclude-sender" className="sr-only">Sender or domain to exclude</label>
             <Input id="exclude-sender" value={sender} onChange={(e) => setSender(e.target.value)} placeholder="name@example.com or @bank.com" maxLength={254} />
-            <Button type="submit" icon={<Plus className="size-3.5" />}>Add</Button>
+            <Button type="submit" icon={<Icon icon={Plus} size="sm" />}>Add</Button>
           </form>
           {s.ai.excludedSenders.length === 0 ? <p className="text-xs text-fg-3">No senders excluded.</p> : (
             <ul className="flex flex-wrap gap-2" aria-label="Excluded senders">
@@ -458,7 +459,7 @@ function PrivacySection() {
                 <li key={x} className="inline-flex h-7 items-center gap-1 rounded-full border border-line bg-surface-2 pl-3 pr-1 text-[12.5px] text-fg">
                   {x}
                   <Tooltip content={`Remove ${x}`}>
-                    <button type="button" aria-label={`Remove ${x}`} className="inline-flex items-center justify-center rounded-full p-1 text-fg-3 hover:bg-surface-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={() => update.mutate({ ai: { excludedSenders: s.ai.excludedSenders.filter((y) => y !== x) } })}><X className="size-3" strokeWidth={1.75} aria-hidden /></button>
+                    <button type="button" aria-label={`Remove ${x}`} className="inline-flex items-center justify-center rounded-full p-1 text-fg-3 hover:bg-surface-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={() => update.mutate({ ai: { excludedSenders: s.ai.excludedSenders.filter((y) => y !== x) } })}><Icon icon={X} size="xs" /></button>
                   </Tooltip>
                 </li>
               ))}
@@ -498,7 +499,7 @@ function PrivacySection() {
       <Panel
         title="AI access log"
         description="Every AI request: when, which feature, and which emails (by subject) it read. Email bodies are never logged."
-        actions={<Button size="sm" variant="ghost" icon={<Trash2 className="size-3.5" />} disabled={!audit.data?.entries.length} onClick={() => setConfirmClear(true)}>Clear history</Button>}
+        actions={<Button size="sm" variant="ghost" icon={<Icon icon={Trash2} size="sm" />} disabled={!audit.data?.entries.length} onClick={() => setConfirmClear(true)}>Clear history</Button>}
       >
         {audit.isLoading ? <Skeleton className="my-3 h-24 w-full" /> : audit.isError ? <p className="py-4 text-[13px] text-danger">{errorMessage(audit.error)}</p> : !audit.data?.entries.length ? (
           <p className="py-6 text-center text-[13px] text-fg-3">No AI activity recorded{s.privacy.keepAiHistoryDays === 0 ? " — history is turned off" : ""}.</p>
@@ -573,8 +574,8 @@ function AboutSection() {
           {([["/privacy", "Privacy policy"], ["/terms", "Terms of service"], ["https://github.com/VargiBeast/Fluent", "Source code on GitHub"]] as Array<[string, string]>).map(([href, label]) => (
             <li key={href}>
               {href.startsWith("http")
-                ? <a href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between py-3 text-fg hover:text-accent-ink">{label}<ExternalLink className="size-3.5 text-fg-3" aria-hidden /></a>
-                : <Link to={href} className="flex items-center justify-between py-3 text-fg hover:text-accent-ink">{label}<ChevronRight className="size-4 text-fg-3" aria-hidden /></Link>}
+                ? <a href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between py-3 text-fg hover:text-accent-ink">{label}<Icon icon={ExternalLink} size="sm" className="text-fg-3" /></a>
+                : <Link to={href} className="flex items-center justify-between py-3 text-fg hover:text-accent-ink">{label}<Icon icon={ChevronRight} className="text-fg-3" /></Link>}
             </li>
           ))}
         </ul>

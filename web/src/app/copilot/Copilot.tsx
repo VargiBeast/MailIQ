@@ -1,5 +1,6 @@
 import * as RD from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useMatch, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowUp, Loader2, Maximize2, Minimize2, ShieldCheck, Sparkles, X } from "lucide-react";
@@ -111,7 +112,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
           )}
         >
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-            <Sparkles className="size-4 text-accent-ink" strokeWidth={1.75} aria-hidden />
+            <Icon icon={Sparkles} className="text-accent-ink" />
             <RD.Title className="text-[14.5px] font-semibold text-fg">MailIQ Copilot</RD.Title>
             <RD.Description className="sr-only">Ask about your mail. Copilot only proposes actions; nothing is sent until you confirm.</RD.Description>
             <span className="hidden text-[11px] text-fg-3 sm:inline" title="Toggle Copilot"><Kbd>⌘J</Kbd></span>
@@ -123,12 +124,12 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
                   onClick={() => setExpanded((v) => !v)}
                   aria-label={expanded ? "Dock to the side" : "Expand Copilot"}
                 >
-                  {expanded ? <Minimize2 className="size-4" strokeWidth={1.75} aria-hidden /> : <Maximize2 className="size-4" strokeWidth={1.75} aria-hidden />}
+                  {expanded ? <Icon icon={Minimize2} /> : <Icon icon={Maximize2} />}
                 </button>
               </Tooltip>
               <Tooltip content="Close">
                 <RD.Close className="inline-flex items-center justify-center rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11 focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
-                  <X className="size-4" strokeWidth={1.75} aria-hidden />
+                  <Icon icon={X} />
                 </RD.Close>
               </Tooltip>
             </div>
@@ -178,8 +179,8 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               </div>
             ))}
             {ask.isPending && (
-              <div className="mr-4 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3" role="status" aria-busy="true">
-                <Loader2 className="size-4 animate-spin" aria-hidden /> Thinking…
+              <div className="mr-4 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3" role="status" aria-live="polite" aria-busy="true">
+                <Icon icon={Loader2} className="animate-spin" /> Thinking…
               </div>
             )}
           </div>
@@ -219,11 +220,11 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               />
               <Tooltip content="Send to Copilot">
                 <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg pointer-coarse:size-11 disabled:opacity-40">
-                  <ArrowUp className="size-4" strokeWidth={1.75} aria-hidden />
+                  <Icon icon={ArrowUp} />
                 </button>
               </Tooltip>
             </div>
-            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-3"><ShieldCheck className="size-3" /> Email content is untrusted and can’t add actions. Logged in Settings → Privacy.</p>
+            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-3"><Icon icon={ShieldCheck} size="xs" /> Email content is untrusted and can’t add actions. Logged in Settings → Privacy.</p>
           </form>
         </RD.Content>
       </RD.Portal>

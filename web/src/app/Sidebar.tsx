@@ -1,4 +1,5 @@
 import { FocusMenu } from "./FocusMode";
+import { Icon } from "@/components/ui/Icon";
 import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { BarChart3, ChevronDown, MailMinus, Keyboard, LogOut, Pencil, Plus, Search, Settings, ShieldCheck, Sparkles, UserRound, type LucideIcon } from "lucide-react";
@@ -66,8 +67,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ? "bg-accent-soft text-fg font-medium ring-1 ring-inset ring-[var(--ai-border)]"
         : "text-fg-2 hover:bg-surface-2 hover:text-fg",
     );
-  const glyph = (Icon: LucideIcon, active: boolean, className?: string) => (
-    <Icon className={cn("size-4", className)} aria-hidden strokeWidth={active ? 2.25 : 1.75} />
+  const glyph = (icon: LucideIcon, active: boolean, className?: string) => (
+    <Icon icon={icon} size="md" active={active} className={className} />
   );
   const searchActive = params.get("focus") === "search";
 
@@ -86,21 +87,21 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 <span className="block truncate text-[13.5px] font-semibold text-fg">{session?.settings?.profile.displayName || user.name}</span>
                 <span className="block truncate text-xs text-fg-3">{user.email}</span>
               </span>
-              <ChevronDown className="size-4 text-fg-3" strokeWidth={1.75} aria-hidden />
+              <Icon icon={ChevronDown} className="text-fg-3" />
             </button>
           </MenuTrigger>
           <MenuContent align="start">
-            <MenuItem icon={<UserRound />} onSelect={() => { navigate("/app/account"); onNavigate?.(); }}>Account</MenuItem>
-            <MenuItem icon={<Settings />} onSelect={() => { navigate("/app/settings"); onNavigate?.(); }}>Settings</MenuItem>
-            <MenuItem icon={<ShieldCheck />} onSelect={() => { navigate("/app/settings/privacy"); onNavigate?.(); }}>Privacy dashboard</MenuItem>
-            <MenuItem icon={<Keyboard />} onSelect={() => shortcuts.open()}>Keyboard shortcuts</MenuItem>
+            <MenuItem icon={<Icon icon={UserRound} />} onSelect={() => { navigate("/app/account"); onNavigate?.(); }}>Account</MenuItem>
+            <MenuItem icon={<Icon icon={Settings} />} onSelect={() => { navigate("/app/settings"); onNavigate?.(); }}>Settings</MenuItem>
+            <MenuItem icon={<Icon icon={ShieldCheck} />} onSelect={() => { navigate("/app/settings/privacy"); onNavigate?.(); }}>Privacy dashboard</MenuItem>
+            <MenuItem icon={<Icon icon={Keyboard} />} onSelect={() => shortcuts.open()}>Keyboard shortcuts</MenuItem>
             <MenuSeparator />
-            <MenuItem icon={<LogOut />} onSelect={logout}>Sign out</MenuItem>
+            <MenuItem icon={<Icon icon={LogOut} />} onSelect={logout}>Sign out</MenuItem>
           </MenuContent>
         </Menu>
       )}
 
-      <Button variant="primary" className="mb-1 w-full" icon={<Pencil className="size-4" strokeWidth={1.75} aria-hidden />} onClick={() => { composer.open({ mode: "new" }); onNavigate?.(); }}>
+      <Button variant="primary" className="mb-1 w-full" icon={<Icon icon={Pencil} />} onClick={() => { composer.open({ mode: "new" }); onNavigate?.(); }}>
         Compose
       </Button>
       <button
@@ -153,10 +154,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       {SIDEBAR_FOLDERS.map((f) => {
         const meta = FOLDER_META[f];
         const count = meta.countKey ? counts[meta.countKey] : undefined;
-        const Icon = meta.icon;
         return (
           <NavLink key={f} to={withAccount(`/app/${f}`)} onClick={onNavigate} className={() => item(currentFolder === f)} aria-current={currentFolder === f ? "page" : undefined}>
-            <Icon className="size-4" aria-hidden strokeWidth={currentFolder === f ? 2.25 : 1.75} />
+            <Icon icon={meta.icon} size="md" active={currentFolder === f} />
             <span className="flex-1">{meta.label}</span>
             {count !== undefined && count > 0 && (
               <Badge tone={f === "inbox" ? "danger" : "muted"}>
@@ -202,14 +202,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         );
       })}
       <NavLink to="/app/account#accounts" onClick={onNavigate} className={() => item(false)}>
-        <Plus className="size-4" aria-hidden />
+        <Icon icon={Plus} />
         <span className="flex-1">Add account</span>
       </NavLink>
 
       <div className="mt-4 flex items-center justify-between px-2.5 pb-1">
         <span className="text-[11px] font-medium uppercase tracking-wider text-fg-3">Labels</span>
         <IconButton label="Create label" size="sm" onClick={() => setLabelOpen(true)}>
-          <Plus className="size-3.5" />
+          <Icon icon={Plus} size="sm" />
         </IconButton>
       </div>
       {labels.isLoading && <div className="px-2.5 py-1 text-xs text-fg-3">Loading labels…</div>}
@@ -233,11 +233,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="mt-auto pt-4">
         <NavLink to="/app/settings" onClick={onNavigate} className={() => item(currentFolder === "settings")} aria-current={currentFolder === "settings" ? "page" : undefined}>
-          <Settings className="size-4" aria-hidden strokeWidth={currentFolder === "settings" ? 2.25 : 1.75} />
+          <Icon icon={Settings} active={currentFolder === "settings"} />
           <span className="flex-1">Settings</span>
         </NavLink>
         <button type="button" onClick={() => shortcuts.open()} className={cn(item(false), "w-full")}>
-          <Keyboard className="size-4" aria-hidden />
+          <Icon icon={Keyboard} />
           <span className="flex-1 text-left">Shortcuts</span>
           <kbd className="text-[11px] text-fg-3">?</kbd>
         </button>
