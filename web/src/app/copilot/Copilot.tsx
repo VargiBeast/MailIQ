@@ -8,6 +8,7 @@ import type { CopilotReply, PlanPreview } from "@shared/copilot";
 import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/cn";
+import { scrollBehavior } from "@/lib/motion";
 import { Kbd } from "@/components/ui/misc";
 import { useCopilot } from "./context";
 import { buildCopilotPlanBody, mapCopilotReply } from "./planRequest";
@@ -70,7 +71,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   }, [open]);
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: scrollBehavior() });
   }, [messages]);
 
   const push = (m: NewMsg) => setMessages((xs) => [...xs, { ...m, id: nextId++ } as Msg]);
