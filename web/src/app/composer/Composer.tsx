@@ -35,12 +35,28 @@ const MAX_TOTAL = 3_500_000;
 
 /** Full-screen mobile composer: keep focus inside and mark the rest of the shell inert. */
 function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | null>, restoreTo: RefObject<HTMLElement | null>) {
+  // Capture during render, before the To field's autoFocus runs. The effect is
+  // too late: focus is already inside the composer, so close would land on body.
+  if (active && restoreTo.current === null && typeof document !== "undefined") {
+    const previous = document.activeElement;
+    const node = ref.current;
+    if (
+      previous instanceof HTMLElement &&
+      previous !== document.body &&
+      previous !== document.documentElement &&
+      !(node && node.contains(previous))
+    ) {
+      restoreTo.current = previous;
+    }
+  }
   useEffect(() => {
     if (!active) return;
     const node = ref.current;
     if (!node) return;
     const previous = document.activeElement;
-    if (previous instanceof HTMLElement && !node.contains(previous)) restoreTo.current = previous;
+    if (!restoreTo.current && previous instanceof HTMLElement && !node.contains(previous) && previous !== document.body) {
+      restoreTo.current = previous;
+    }
     const parent = node.parentElement;
     const inerted: HTMLElement[] = [];
     if (parent) {

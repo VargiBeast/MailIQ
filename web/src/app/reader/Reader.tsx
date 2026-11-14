@@ -220,7 +220,9 @@ function useReaderShortcuts(map: Record<string, () => void>) {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (document.querySelector("[role=dialog]")) return;
+      // A dialog (including the composer) or an open menu owns Escape. Closing the
+      // thread here would unmount the menu before its exit animation and focus return.
+      if (document.querySelector("[role=dialog], [role=menu][data-state=open], [role=listbox][data-state=open]")) return;
       const fn = map[e.key];
       if (fn) {
         e.preventDefault();
