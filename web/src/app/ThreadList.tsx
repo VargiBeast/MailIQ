@@ -82,6 +82,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
   const searchRef = useRef<HTMLInputElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const reducedMotion = usePrefersReducedMotion();
   const anchor = useRef<string | null>(null);
   // While selecting, the mobile bulk bar owns the bottom edge, so the floating Copilot button steps aside.
   useEffect(() => {
@@ -320,7 +321,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
             {starred.length > 0 && (
               <li>
                 <GroupHeader label="Starred" action={<button type="button" className="flex items-center gap-1 text-[11.5px] text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:text-fg" onClick={() => setShowStarred((v) => !v)} aria-expanded={showStarred}>{showStarred ? "Hide" : "Show"}<ChevronUp className={cn("size-3.5 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", !showStarred && "rotate-180")} /></button>} />
-                {showStarred && <ul className="animate-reveal">{starred.map((t) => <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} />)}</ul>}
+                {showStarred && <ul className="animate-reveal">{starred.map((t) => <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} reducedMotion={reducedMotion} />)}</ul>}
               </li>
             )}
             {groups.map(([label, items]) => (
@@ -328,7 +329,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
                 <GroupHeader label={label} />
                 <ul>
                   {items.map((t) => (
-                    <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} />
+                    <Row key={`${t.accountId}:${t.id}`} t={t} picked={picked.has(`${t.accountId}:${t.id}`)} selecting={picked.size > 0} onPick={(range) => toggle(t, range)} selected={selectedKey === `${t.accountId}:${t.id}`} onOpen={() => open(t)} onSwipeReply={() => open(t, true)} onStar={() => action.mutate({ accountId: t.accountId, threadId: t.id, action: t.starred ? "unstar" : "star", folder: args.folder })} multiAccount={(session?.accounts?.length ?? 0) > 1 && !args.account} reducedMotion={reducedMotion} />
                   ))}
                 </ul>
               </li>
@@ -356,9 +357,9 @@ function GroupHeader({ label, action }: { label: string; action?: React.ReactNod
   );
 }
 
-function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, selecting, onPick }: {
+function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, selecting, onPick, reducedMotion }: {
   t: ThreadSummary; selected: boolean; onOpen: () => void; onSwipeReply: () => void; onStar: () => void; multiAccount: boolean;
-  picked: boolean; selecting: boolean; onPick: (range: boolean) => void;
+  picked: boolean; selecting: boolean; onPick: (range: boolean) => void; reducedMotion: boolean;
 }) {
   const { session } = useSession();
   const accIdx = session?.accounts?.findIndex((a) => a.id === t.accountId) ?? 0;
@@ -371,8 +372,16 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
   const revealRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
   const offsetRef = useRef(0);
+  const snapListener = useRef<((ev: TransitionEvent) => void) | null>(null);
   const [swiping, setSwiping] = useState(false);
-  const reducedMotion = usePrefersReducedMotion();
+  useEffect(() => {
+    const row = rowRef.current;
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      const listener = snapListener.current;
+      if (row && listener) row.removeEventListener("transitionend", listener);
+    };
+  }, []);
   const paintSwipe = (dx: number) => {
     const row = rowRef.current;
     if (row) {
@@ -423,14 +432,19 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
     const s = swipe.current;
     const offset = offsetRef.current;
     const row = rowRef.current;
+    const wasActive = Boolean(s?.active);
     if (s?.active) {
       s.done = true;
       if (offset <= -SWIPE_TRIGGER) { navigator.vibrate?.(8); onSwipeReply(); }
       setSwiping(false);
     }
-    if (row && offset !== 0) {
+    if (row && wasActive) {
+      const previous = snapListener.current;
+      if (previous) row.removeEventListener("transitionend", previous);
+      snapListener.current = null;
       row.style.background = "";
-      if (reducedMotion) {
+      if (reducedMotion || offset === 0) {
+        row.style.transition = "";
         row.style.transform = "";
       } else {
         row.style.transition = "transform var(--duration-normal) var(--ease-out)";
@@ -440,7 +454,9 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
           row.style.transition = "";
           row.style.transform = "";
           row.removeEventListener("transitionend", clear);
+          if (snapListener.current === clear) snapListener.current = null;
         };
+        snapListener.current = clear;
         row.addEventListener("transitionend", clear);
       }
     }

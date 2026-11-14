@@ -1,27 +1,39 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
-function systemReducedMotion() {
-  return typeof window !== "undefined" && window.matchMedia(REDUCED_MOTION_QUERY).matches;
+const listeners = new Set<() => void>();
+let media: MediaQueryList | null = null;
+
+function ensureMedia() {
+  if (media || typeof window === "undefined") return;
+  media = window.matchMedia(REDUCED_MOTION_QUERY);
+  media.addEventListener("change", () => {
+    listeners.forEach((listener) => listener());
+  });
+}
+
+function subscribe(onStoreChange: () => void) {
+  listeners.add(onStoreChange);
+  ensureMedia();
+  return () => {
+    listeners.delete(onStoreChange);
+  };
+}
+
+function getSnapshot() {
+  ensureMedia();
+  return media?.matches ?? false;
 }
 
 /**
  * True when the OS asks for reduced motion.
- * JS-driven motion (swipe snap, composer close) checks this; CSS animations
- * are already collapsed by the global prefers-reduced-motion rule.
+ * One module-level MediaQueryList is shared by every caller.
+ * JS-driven motion checks this; CSS animations are collapsed by the global rule.
  * Foundation may also export scrollBehavior from this module — keep that helper if it lands.
  */
 export function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(systemReducedMotion);
-  useEffect(() => {
-    const mq = window.matchMedia(REDUCED_MOTION_QUERY);
-    const onChange = () => setReduced(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
 /** Tooltip open delay. Mirrors --delay-tooltip in styles/index.css. */
