@@ -75,11 +75,11 @@ export default function Hero({ signIn, notice }: { signIn: ReactNode; notice?: R
   return (
     <section
       data-reduced-motion={reduced ? "true" : "false"}
-      className="mk-section mk-reveal is-visible relative mx-auto w-full max-w-6xl px-5 pb-12 pt-8 sm:pb-20 sm:pt-16"
+      className="relative mx-auto w-full max-w-6xl scroll-mt-[6.5rem] px-5 pb-12 pt-4 sm:pb-16 sm:pt-8"
     >
       <div
         aria-hidden
-        className="mk-glow pointer-events-none absolute inset-x-0 -top-20 h-[440px] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.22),transparent_68%)]"
+        className="pointer-events-none absolute inset-x-0 -top-20 h-[440px] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.22),transparent_68%)]"
       />
       <div className="relative mx-auto max-w-3xl text-center">
         <p className="mk-eyebrow inline-flex items-center rounded-full border border-[var(--ai-border)] bg-accent-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-ai-title">
@@ -110,7 +110,7 @@ export default function Hero({ signIn, notice }: { signIn: ReactNode; notice?: R
           <div className="relative isolate">
             <div
               aria-hidden
-              className="mk-glow pointer-events-none absolute -inset-x-2 -inset-y-8 -z-10 bg-[radial-gradient(45%_55%_at_50%_42%,rgba(139,92,246,0.34),transparent_72%),radial-gradient(28%_40%_at_82%_18%,rgba(196,181,253,0.18),transparent_70%)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]"
+              className="pointer-events-none absolute -inset-x-2 -inset-y-8 -z-10 bg-[radial-gradient(45%_55%_at_50%_42%,rgba(139,92,246,0.34),transparent_72%),radial-gradient(28%_40%_at_82%_18%,rgba(196,181,253,0.18),transparent_70%)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]"
               style={{ transform: allowTilt ? `translate3d(${tilt.gx}px, ${tilt.gy}px, 0)` : "none" }}
             />
             <ProductFrame
