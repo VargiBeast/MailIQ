@@ -22,15 +22,6 @@ import { setPrefs } from "@/lib/prefs";
 
 export const SidebarContext = { open: () => {} };
 
-/** Stable while a thread opens, so the list/reader swap can animate on its own. */
-function routeMotionKey(pathname: string) {
-  const parts = pathname.split("/").filter(Boolean);
-  if (parts[0] !== "app") return parts.join("/") || pathname;
-  if (parts[1] === "settings") return "app/settings";
-  if (parts.length >= 4) return `app/${parts[1]}`;
-  return parts.join("/");
-}
-
 export function AppLayout() {
   const { session, loading } = useSession();
   const location = useLocation();
@@ -105,7 +96,7 @@ function Shell() {
       <main id="main" className="flex min-w-0 flex-1 flex-col">
         <FocusBanner />
         {/* Bottom padding reserves space for mobile tab bar */}
-        <div key={routeMotionKey(location.pathname)} className="animate-pane min-h-0 flex-1 pb-14 lg:pb-0">
+        <div className="min-h-0 flex-1 pb-14 lg:pb-0">
           <Outlet />
         </div>
       </main>

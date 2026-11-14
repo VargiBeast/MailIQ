@@ -402,8 +402,12 @@ body[data-selecting] [data-mobile-nav] { display: none; }
 @utility animate-reveal {
   animation: reveal-down var(--duration-normal) var(--ease-out) both;
 }
+@keyframes pane-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @utility animate-pane {
-  animation: fade-in var(--duration-normal) var(--ease-out) both;
+  animation: pane-in var(--duration-normal) var(--ease-out) both;
 }
 
 /* One moving sheen per list row instead of a shimmer on every bar. */
