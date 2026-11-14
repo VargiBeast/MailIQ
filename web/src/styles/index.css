@@ -45,12 +45,37 @@
   --text-2xl: 24px;
   --text-3xl: 32px;
 
-  /* Motion foundations */
+  /* Motion. Enter with ease-out; exits are shorter and use ease-in.
+     Distances are small offsets. See web/docs/phase-3-foundation.md. */
   --duration-fast: 120ms;
   --duration-normal: 160ms;
   --duration-slow: 240ms;
+  --duration-exit: 100ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Mirror of ease-out, so exits accelerate away. */
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-distance-sm: 4px;
+  --motion-distance-md: 8px;
+  --motion-distance-lg: 16px;
+
+  /* Utilities: animate-fade-in, data-[state=open]:animate-fade-in, and so on.
+     Do not register animate-in — that name is a plain class, and Copilot already
+     writes data-[state=open]:animate-in, which must stay a no-op until motion work lands. */
+  --animate-fade-in: fade-in var(--duration-normal) var(--ease-out) both;
+  --animate-fade-out: fade-out var(--duration-exit) var(--ease-in) both;
+  --animate-scale-in: fade-scale var(--duration-normal) var(--ease-out) both;
+  --animate-scale-out: scale-out var(--duration-exit) var(--ease-in) both;
+  --animate-overlay-in: overlay-in var(--duration-normal) var(--ease-out) both;
+  --animate-overlay-out: overlay-out var(--duration-exit) var(--ease-in) both;
+  --animate-slide-in-from-top: slide-in-from-top var(--duration-normal) var(--ease-out) both;
+  --animate-slide-in-from-bottom: slide-in-from-bottom var(--duration-normal) var(--ease-out) both;
+  --animate-slide-in-from-left: slide-in-from-left var(--duration-normal) var(--ease-out) both;
+  --animate-slide-in-from-right: slide-in-from-right var(--duration-normal) var(--ease-out) both;
+  --animate-slide-out-to-top: slide-out-to-top var(--duration-exit) var(--ease-in) both;
+  --animate-slide-out-to-bottom: slide-out-to-bottom var(--duration-exit) var(--ease-in) both;
+  --animate-slide-out-to-left: slide-out-to-left var(--duration-exit) var(--ease-in) both;
+  --animate-slide-out-to-right: slide-out-to-right var(--duration-exit) var(--ease-in) both;
 }
 
 :root {
@@ -299,20 +324,92 @@ body {
 }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
+/*
+  Enter and exit keyframes. They animate `transform`, never the `translate` property.
+  Tailwind v4 centering (`-translate-x-1/2 -translate-y-1/2`) sets `translate`, which
+  composes with `transform`, so a centered dialog stays centered and `transform: none`
+  only clears the animation offset. The reduced-motion rule below covers every animation.
+*/
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(var(--motion-distance-sm)); }
   to { opacity: 1; transform: none; }
+}
+@keyframes fade-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(var(--motion-distance-sm)); }
 }
 @keyframes fade-scale {
   from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: none; }
 }
+@keyframes scale-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: scale(0.98); }
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes slide-in-from-top {
+  from { opacity: 0; transform: translateY(calc(var(--motion-slide-distance, var(--motion-distance-md)) * -1)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-out-to-top {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(calc(var(--motion-slide-distance, var(--motion-distance-md)) * -1)); }
+}
+@keyframes slide-in-from-bottom {
+  from { opacity: 0; transform: translateY(var(--motion-slide-distance, var(--motion-distance-md))); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-out-to-bottom {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(var(--motion-slide-distance, var(--motion-distance-md))); }
+}
+@keyframes slide-in-from-left {
+  from { opacity: 0; transform: translateX(calc(var(--motion-slide-distance, var(--motion-distance-md)) * -1)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-out-to-left {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(calc(var(--motion-slide-distance, var(--motion-distance-md)) * -1)); }
+}
+@keyframes slide-in-from-right {
+  from { opacity: 0; transform: translateX(var(--motion-slide-distance, var(--motion-distance-md))); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-out-to-right {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(var(--motion-slide-distance, var(--motion-distance-md))); }
+}
+/* Existing call sites. Same keyframes and timing as before; not switched to the animate-* utilities. */
 .animate-in {
   animation: fade-in var(--duration-normal) var(--ease-out) both;
 }
 .animate-scale-in {
   animation: fade-scale var(--duration-normal) var(--ease-out) both;
 }
+/* One class on a Radix node. data-state picks enter (open) or exit (closed). */
+.motion-fade[data-state="open"] { animation: var(--animate-fade-in); }
+.motion-fade[data-state="closed"] { animation: var(--animate-fade-out); }
+.motion-scale[data-state="open"] { animation: var(--animate-scale-in); }
+.motion-scale[data-state="closed"] { animation: var(--animate-scale-out); }
+.motion-overlay[data-state="open"] { animation: var(--animate-overlay-in); }
+.motion-overlay[data-state="closed"] { animation: var(--animate-overlay-out); }
+.motion-slide-from-top[data-state="open"] { animation: var(--animate-slide-in-from-top); }
+.motion-slide-from-top[data-state="closed"] { animation: var(--animate-slide-out-to-top); }
+.motion-slide-from-bottom[data-state="open"] { animation: var(--animate-slide-in-from-bottom); }
+.motion-slide-from-bottom[data-state="closed"] { animation: var(--animate-slide-out-to-bottom); }
+.motion-slide-from-left[data-state="open"] { animation: var(--animate-slide-in-from-left); }
+.motion-slide-from-left[data-state="closed"] { animation: var(--animate-slide-out-to-left); }
+.motion-slide-from-right[data-state="open"] { animation: var(--animate-slide-in-from-right); }
+.motion-slide-from-right[data-state="closed"] { animation: var(--animate-slide-out-to-right); }
+/* Opt a subtree into the 16px slide. Default slides use --motion-distance-md (8px). */
+.motion-distance-lg { --motion-slide-distance: var(--motion-distance-lg); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
