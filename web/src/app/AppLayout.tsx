@@ -22,6 +22,15 @@ import { setPrefs } from "@/lib/prefs";
 
 export const SidebarContext = { open: () => {} };
 
+/** Stable while a thread opens, so the list/reader swap can animate on its own. */
+function routeMotionKey(pathname: string) {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[0] !== "app") return parts.join("/") || pathname;
+  if (parts[1] === "settings") return "app/settings";
+  if (parts.length >= 4) return `app/${parts[1]}`;
+  return parts.join("/");
+}
+
 export function AppLayout() {
   const { session, loading } = useSession();
   const location = useLocation();
@@ -77,12 +86,13 @@ function Shell() {
         <RD.Portal>
           <RD.Overlay
             data-drawer-overlay=""
-            className="fixed inset-x-0 top-0 z-40 h-[100dvh] min-h-full bg-[var(--overlay)] lg:hidden"
+            className="fixed inset-x-0 top-0 z-40 h-[100dvh] min-h-full bg-[var(--overlay)] data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out lg:hidden"
           />
           <RD.Content
             className={cn(
               "fixed left-0 top-0 z-50 box-border flex h-[100dvh] min-h-full w-[min(300px,88vw)] flex-col",
-              "border-r border-line bg-surface pb-[var(--sab)] pt-[var(--sat)] shadow-[var(--shadow-lg)] animate-in lg:hidden",
+              "border-r border-line bg-surface pb-[var(--sab)] pt-[var(--sat)] shadow-[var(--shadow-lg)] lg:hidden",
+              "data-[state=open]:animate-slide-in-left data-[state=closed]:animate-slide-out-left",
             )}
             aria-describedby={undefined}
           >
@@ -95,7 +105,7 @@ function Shell() {
       <main id="main" className="flex min-w-0 flex-1 flex-col">
         <FocusBanner />
         {/* Bottom padding reserves space for mobile tab bar */}
-        <div className="min-h-0 flex-1 pb-14 lg:pb-0">
+        <div key={routeMotionKey(location.pathname)} className="animate-pane min-h-0 flex-1 pb-14 lg:pb-0">
           <Outlet />
         </div>
       </main>
