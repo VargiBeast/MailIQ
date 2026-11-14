@@ -83,9 +83,6 @@ function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | nu
         el.removeAttribute("inert");
         el.removeAttribute("data-composer-inert");
       }
-      const back = restoreTo.current;
-      restoreTo.current = null;
-      if (back?.isConnected) back.focus();
     };
   }, [active, ref, restoreTo]);
 }
@@ -547,7 +544,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
             <Button variant="ai" size="md" aria-busy={aiBusy || undefined} icon={aiBusy ? <><Icon icon={Loader2} size="sm" className="animate-spin" /><span className="sr-only">Loading…</span></> : <Icon icon={Sparkles} size="sm" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
             <Menu>
               <MenuTrigger asChild>
-                <Button variant="ghost" size="md" loading={aiBusy} icon={<Icon icon={Wand2} size="sm" />}>
+                <Button variant="ghost" size="md" disabled={aiBusy} aria-busy={aiBusy || undefined} icon={aiBusy ? <><Icon icon={Loader2} size="sm" className="animate-spin" /><span className="sr-only">Loading…</span></> : <Icon icon={Wand2} size="sm" />}>
                   Rewrite <Icon icon={ChevronDown} size="sm" />
                 </Button>
               </MenuTrigger>

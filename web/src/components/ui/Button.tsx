@@ -53,7 +53,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {...rest}
     >
       {loading ? <Icon icon={Loader2} className="animate-spin" /> : icon}
-      {loading ? "Loading…" : children}
+      {children}
+      {loading ? <span className="sr-only">Loading…</span> : null}
     </button>
   );
 });
@@ -75,7 +76,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
         ref={ref}
         type={type}
         aria-label={label}
-        aria-pressed={active}
+        aria-pressed={active || undefined}
         disabled={disabled}
         className={cn(
           "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-fg-3",

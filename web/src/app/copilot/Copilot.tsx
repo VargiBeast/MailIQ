@@ -134,7 +134,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
             </div>
           </div>
 
-          <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 scroll-thin">
+          <div ref={listRef} aria-busy={ask.isPending || undefined} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 scroll-thin">
             {!aiReady && (
               <p className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3">
                 AI isn’t configured on this server. Add an AI provider key (see docs/SETUP.md) to use Copilot.
@@ -180,7 +180,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               </div>
             ))}
             {ask.isPending && (
-              <div className="mr-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3" role="status" aria-live="polite" aria-busy="true">
+              <div className="mr-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3" role="status" aria-live="polite">
                 <p>Thinking…</p>
                 <div className="mt-2 space-y-2" aria-hidden>
                   <div className="shimmer h-3 w-full rounded-[var(--radius-sm)]" />
