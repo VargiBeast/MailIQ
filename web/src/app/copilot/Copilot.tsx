@@ -104,13 +104,12 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] data-[state=open]:animate-in" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out" />
         <RD.Content
+          data-expanded={expanded ? "true" : "false"}
           className={cn(
-            "fixed z-50 flex flex-col border border-line-strong bg-surface shadow-[var(--shadow-lg)] outline-none animate-scale-in",
-            expanded
-              ? "inset-3 max-h-[calc(100%-1.5rem)] rounded-[var(--radius-xl)] sm:inset-x-[12%] sm:inset-y-8"
-              : "bottom-0 right-0 top-0 w-full max-w-md border-l sm:rounded-l-[var(--radius-xl)]",
+            "copilot-panel fixed z-50 flex flex-col border border-line-strong bg-surface shadow-[var(--shadow-lg)] outline-none",
+            "data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
           )}
         >
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">
@@ -120,13 +119,13 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
             <div className="ml-auto flex items-center gap-1">
               <button
                 type="button"
-                className="hidden rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg sm:inline-flex focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]"
+                className="hidden rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 hover:text-fg sm:inline-flex focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]"
                 onClick={() => setExpanded((v) => !v)}
                 aria-label={expanded ? "Dock to the side" : "Expand Copilot"}
               >
                 {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
               </button>
-              <RD.Close className="rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
+              <RD.Close className="rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
                 <X className="size-4" />
               </RD.Close>
             </div>
@@ -159,6 +158,8 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               <div key={m.id} className={cn("rounded-xl px-3 py-2 text-[13.5px]", m.role === "user" ? "ml-8 bg-accent text-accent-fg" : m.role === "error" ? "border border-danger/40 bg-danger/10 text-fg" : "mr-4 border border-line bg-surface-2 text-fg")}>
                 {m.role === "plan" ? (
                   <PlanCard plan={m.plan} onOpenThread={(accountId, threadId) => navigate(`/app/inbox/${accountId}/${threadId}`)} />
+                ) : m.role === "assistant" ? (
+                  <ReplyText text={m.text} />
                 ) : (
                   <p className="whitespace-pre-wrap">{m.text}</p>
                 )}
@@ -176,8 +177,12 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               </div>
             ))}
             {ask.isPending && (
-              <div className="mr-4 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3">
-                <Loader2 className="size-4 animate-spin" /> Thinking…
+              <div className="mr-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3">
+                <p>Thinking…</p>
+                <div className="mt-2 space-y-2">
+                  <div className="shimmer h-3 w-full rounded-[var(--radius-sm)]" />
+                  <div className="shimmer h-3 w-4/5 rounded-[var(--radius-sm)]" />
+                </div>
               </div>
             )}
           </div>
@@ -215,8 +220,8 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
                 placeholder={scoped ? "Try: draft a reply saying Thursday works" : "Try: archive all newsletters from last week"}
                 className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent px-2 py-2 text-[13.5px] text-fg outline-none placeholder:text-fg-3"
               />
-              <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg disabled:opacity-40">
-                <ArrowUp className="size-4" />
+              <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)] disabled:opacity-40">
+                {ask.isPending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
               </button>
             </div>
             <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-3"><ShieldCheck className="size-3" /> Email content is untrusted and can’t add actions. Logged in Settings → Privacy.</p>
@@ -227,12 +232,24 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   );
 }
 
+/** Fade each paragraph in. The text is already complete — this is not token streaming. */
+function ReplyText({ text }: { text: string }) {
+  const blocks = text.split(/\n{2,}/);
+  return (
+    <div className="reply-stagger space-y-2">
+      {blocks.map((part, i) => (
+        <p key={i} className="whitespace-pre-wrap">{part}</p>
+      ))}
+    </div>
+  );
+}
+
 /** Plan preview card used by Copilot and Overview. */
 export function PlanCard({ plan, onOpenThread }: { plan: PlanPreview; onOpenThread?: (accountId: string, threadId: string) => void }) {
   return (
     <div className="space-y-3 p-1">
       <p className="text-[13.5px] text-fg">{plan.summary}</p>
-      <ul className="space-y-2">
+      <ul className="reply-stagger space-y-2">
         {plan.actions.map((a) => (
           <li key={a.index} className="rounded-xl border border-line bg-surface-2 px-3 py-2">
             <p className="text-[13px] font-medium text-fg">{a.title}</p>
