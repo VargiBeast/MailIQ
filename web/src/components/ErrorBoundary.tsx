@@ -1,17 +1,17 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state = { error: null as Error | null };
+  override state = { error: null as Error | null };
 
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("MailIQ error boundary", error, info.componentStack);
   }
 
-  render() {
+  override render() {
     if (this.state.error) {
       return (
         <div className="flex min-h-full flex-col items-center justify-center gap-3 p-8 text-center">
