@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Bold, Italic, Underline, List, ListOrdered, Quote, Link2, Paperclip, Sparkles, Maximize2, Minimize2, X, Trash2, Send, Loader2, FileText, Wand2, ChevronDown, Undo2, FileStack,
+  Bold, Italic, Underline, List, ListOrdered, Quote, Link2, Paperclip, Sparkles, Maximize2, Minimize2, X, Trash2, Send, Loader2, FileText, Wand2, ChevronDown, Undo2, FileStack, Check,
 } from "lucide-react";
 import type { ThreadDetail } from "@shared/mail";
 import { Button, IconButton } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { ConfirmDialog, Dialog } from "@/components/ui/Dialog";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { Textarea } from "@/components/ui/Field";
@@ -27,8 +28,57 @@ import { TemplateEditorDialog, TemplatePicker } from "./TemplatePicker";
 import { isTemplateShortcut, TEMPLATE_SHORTCUT_LABEL, templateToHtml } from "@/lib/templates";
 import type { Template } from "@shared/templates";
 import { MicButton } from "../voice/MicButton";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 const MAX_TOTAL = 3_500_000;
+
+/** Full-screen mobile composer: keep focus inside and mark the rest of the shell inert. */
+function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!active) return;
+    const node = ref.current;
+    if (!node) return;
+    const parent = node.parentElement;
+    const inerted: HTMLElement[] = [];
+    if (parent) {
+      for (const child of Array.from(parent.children)) {
+        if (child === node || !(child instanceof HTMLElement) || child.hasAttribute("inert")) continue;
+        child.setAttribute("inert", "");
+        inerted.push(child);
+      }
+    }
+    const focusable = () =>
+      [...node.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(
+        (el) => !el.closest("[hidden]"),
+      );
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const current = document.activeElement;
+      // Portaled menus and confirm dialogs live outside the composer node. Leave them alone.
+      if (current instanceof Element && !node.contains(current) && current.closest("[role=dialog], [role=menu], [data-radix-popper-content-wrapper]")) return;
+      const items = focusable();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      if (e.shiftKey && (current === first || !node.contains(current))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && current === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    if (!node.contains(document.activeElement)) focusable()[0]?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      for (const el of inerted) el.removeAttribute("inert");
+    };
+  }, [active, ref]);
+}
 
 export function ComposerHost() {
   const { requests, close } = useComposer();
@@ -104,8 +154,8 @@ function Composer({ request, onClose }: { request: ComposeRequest & { key: numbe
   }
   if (!init) {
     return (
-      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-fg-2 shadow-[var(--shadow)]">
-        <Loader2 className="size-4 animate-spin" /> Opening draft…
+      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-fg-2 shadow-[var(--shadow)]" role="status" aria-busy="true">
+        <Loader2 className="size-4 animate-spin" aria-hidden /> Opening draft…
       </div>
     );
   }
@@ -329,14 +379,20 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
 
   const title = mode === "reply" || mode === "replyAll" ? "Reply" : mode === "forward" ? "Forward" : mode === "draft" ? "Draft" : "New message";
   const accountEmail = accounts.find((a) => a.id === accountId)?.email;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const narrow = useMediaQuery("(max-width: 639px)");
+  const modal = narrow && !hidden;
+  useMobileComposerGuard(modal, rootRef);
 
   return (
     <div
-      role="dialog"
+      ref={rootRef}
+      role={hidden ? undefined : "dialog"}
       data-composer=""
+      data-minimized={hidden ? "" : undefined}
       data-maximized={maximized ? "" : undefined}
-      aria-label={title}
-      aria-modal="false"
+      aria-label={hidden ? undefined : title}
+      aria-modal={hidden ? undefined : modal}
       hidden={hidden}
       onKeyDown={onKeyDown}
       className={cn(
@@ -405,8 +461,9 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
         <EditorContent editor={editor} />
         {init.quote && (
           <div className="px-4 pb-3">
-            <button type="button" onClick={(e) => { e.stopPropagation(); setIncludeQuote((v) => !v); }} className="rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-pressed={includeQuote}>
-              {includeQuote ? (mode === "forward" ? "Forwarded message included ✓" : "Quoted text included ✓") : "Quoted text removed — click to include"}
+            <button type="button" onClick={(e) => { e.stopPropagation(); setIncludeQuote((v) => !v); }} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-pressed={includeQuote}>
+              {includeQuote && <Check className="size-3.5" strokeWidth={2.25} aria-hidden />}
+              {includeQuote ? (mode === "forward" ? "Forwarded message included" : "Quoted text included") : "Quoted text removed — click to include"}
             </button>
           </div>
         )}
@@ -417,7 +474,9 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
                 <FileText className="size-3.5 text-fg-3" aria-hidden />
                 <span className="max-w-[180px] truncate text-fg">{a.filename}</span>
                 <span className="text-fg-3">{formatBytes(a.size)}</span>
-                <button type="button" aria-label={`Remove ${a.filename}`} className="text-fg-3 hover:text-fg" onClick={(e) => { e.stopPropagation(); setAttachments(attachments.filter((_, j) => j !== i)); setDirty(true); }}><X className="size-3.5" /></button>
+                <Tooltip content={`Remove ${a.filename}`}>
+                  <button type="button" aria-label={`Remove ${a.filename}`} className="inline-flex items-center justify-center text-fg-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={(e) => { e.stopPropagation(); setAttachments(attachments.filter((_, j) => j !== i)); setDirty(true); }}><X className="size-3.5" strokeWidth={1.75} aria-hidden /></button>
+                </Tooltip>
               </li>
             ))}
           </ul>
@@ -435,8 +494,8 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
             <Button variant="ai" size="md" icon={<Sparkles className="size-3.5" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
             <Menu>
               <MenuTrigger asChild>
-                <Button variant="ghost" size="md" disabled={aiBusy} icon={aiBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}>
-                  Rewrite <ChevronDown className="size-3.5" />
+                <Button variant="ghost" size="md" loading={aiBusy} icon={<Wand2 className="size-3.5" strokeWidth={1.75} aria-hidden />}>
+                  Rewrite <ChevronDown className="size-3.5" strokeWidth={1.75} aria-hidden />
                 </Button>
               </MenuTrigger>
               <MenuContent align="start">
@@ -514,7 +573,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   }, [editor]);
   if (!editor) return null;
   const btn = (label: string, active: boolean, onClick: () => void, icon: React.ReactNode) => (
-    <IconButton label={label} size="sm" active={active} aria-pressed={active} onClick={onClick} className={active ? "bg-surface-3" : ""}>{icon}</IconButton>
+    <IconButton label={label} size="sm" active={active} aria-pressed={active} onClick={onClick}>{icon}</IconButton>
   );
   return (
     <div className="flex shrink-0 items-center gap-0.5 border-b border-line px-3 py-1" role="toolbar" aria-label="Formatting">

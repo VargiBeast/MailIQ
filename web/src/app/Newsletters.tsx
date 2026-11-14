@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertCircle, AlertTriangle, Archive, CheckCircle2, ExternalLink, Mail, MailMinus, Menu, RefreshCw } from "lucide-react";
+import { AlertCircle, Archive, CheckCircle2, ExternalLink, Mail, MailMinus, Menu, RefreshCw, TriangleAlert } from "lucide-react";
 import { UNSUB_RANGES, type ArchiveResult, type NewsletterScan, type NewsletterSender, type UnsubRange } from "@shared/unsubscribe";
 import { api, errorMessage, qs } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -113,7 +113,7 @@ export function NewslettersPage() {
             Newsletters and mailing lists that offer an unsubscribe option, least-opened first. Nothing happens until you click.
           </p>
           {q.isLoading ? (
-            <div className="space-y-2">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
+            <div className="space-y-2" aria-busy="true"><span className="sr-only">Loading…</span>{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
           ) : q.isError ? (
             <EmptyState icon={<AlertCircle className="size-5" />} title="Couldn't scan your mail" description={errorMessage(q.error)} action={<Button onClick={() => void q.refetch()}>Try again</Button>} />
           ) : q.data && senders.length === 0 ? (
@@ -122,7 +122,7 @@ export function NewslettersPage() {
             <>
               {q.data.errors.length > 0 && (
                 <p className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-                  <AlertTriangle className="size-4 text-warning" aria-hidden /> Some accounts couldn't be read: {q.data.errors.map((e) => e.message).join(" ")}
+                  <TriangleAlert className="size-4 text-warning" strokeWidth={1.75} aria-hidden /> Some accounts couldn't be read: {q.data.errors.map((e) => e.message).join(" ")}
                 </p>
               )}
               <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">

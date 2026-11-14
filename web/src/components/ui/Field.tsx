@@ -103,6 +103,7 @@ export function Switch({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors duration-[var(--duration-fast)]",
+          "pointer-coarse:before:absolute pointer-coarse:before:-inset-x-1 pointer-coarse:before:-inset-y-3 pointer-coarse:before:content-['']",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ring)]",
           "disabled:cursor-not-allowed disabled:opacity-50",
           checked ? "bg-accent" : "bg-surface-3",

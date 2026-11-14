@@ -12,8 +12,8 @@ export function ReadLaterButton({ thread }: { thread: ThreadDetail }) {
     onSuccess: () => toast.success(saved ? "Removed from Read later" : "Saved to Read later"),
   });
   return (
-    <IconButton label={saved ? "Remove from Read later (b)" : "Read later (b)"} active={saved} aria-pressed={saved} onClick={run} data-read-later-trigger="">
-      {saved ? <BookmarkCheck className="size-[18px]" /> : <Bookmark className="size-[18px]" />}
+    <IconButton label="Read later (b)" aria-pressed={saved} onClick={run} data-read-later-trigger="">
+      {saved ? <BookmarkCheck className="size-5 text-accent-ink" strokeWidth={2.25} aria-hidden /> : <Bookmark className="size-5" strokeWidth={1.75} aria-hidden />}
     </IconButton>
   );
 }

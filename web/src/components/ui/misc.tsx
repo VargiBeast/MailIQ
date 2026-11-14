@@ -20,7 +20,7 @@ export function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium",
+        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium pointer-coarse:h-11 pointer-coarse:min-w-11",
         "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ring)]",
         active

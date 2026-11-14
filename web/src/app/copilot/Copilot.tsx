@@ -13,6 +13,7 @@ import { useSession } from "@/lib/session";
 import { cn } from "@/lib/cn";
 import { displayName, listDate } from "@/lib/format";
 import { Button, IconButton } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { Kbd } from "@/components/ui/misc";
 import { useCopilot } from "./context";
 import { buildCopilotPlanBody, mapCopilotReply } from "./planRequest";
@@ -114,21 +115,26 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
           )}
         >
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-            <Sparkles className="size-4 text-accent-ink" />
+            <Sparkles className="size-4 text-accent-ink" strokeWidth={1.75} aria-hidden />
             <RD.Title className="text-[14.5px] font-semibold text-fg">MailIQ Copilot</RD.Title>
+            <RD.Description className="sr-only">Ask about your mail. Copilot only proposes actions; nothing is sent until you confirm.</RD.Description>
             <span className="hidden text-[11px] text-fg-3 sm:inline" title="Toggle Copilot"><Kbd>⌘J</Kbd></span>
             <div className="ml-auto flex items-center gap-1">
-              <button
-                type="button"
-                className="hidden rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg sm:inline-flex focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]"
-                onClick={() => setExpanded((v) => !v)}
-                aria-label={expanded ? "Dock to the side" : "Expand Copilot"}
-              >
-                {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-              </button>
-              <RD.Close className="rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
-                <X className="size-4" />
-              </RD.Close>
+              <Tooltip content={expanded ? "Dock to the side" : "Expand Copilot"}>
+                <button
+                  type="button"
+                  className="hidden items-center justify-center rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11 sm:inline-flex focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]"
+                  onClick={() => setExpanded((v) => !v)}
+                  aria-label={expanded ? "Dock to the side" : "Expand Copilot"}
+                >
+                  {expanded ? <Minimize2 className="size-4" strokeWidth={1.75} aria-hidden /> : <Maximize2 className="size-4" strokeWidth={1.75} aria-hidden />}
+                </button>
+              </Tooltip>
+              <Tooltip content="Close">
+                <RD.Close className="inline-flex items-center justify-center rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11 focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
+                  <X className="size-4" strokeWidth={1.75} aria-hidden />
+                </RD.Close>
+              </Tooltip>
             </div>
           </div>
 
@@ -176,8 +182,8 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               </div>
             ))}
             {ask.isPending && (
-              <div className="mr-4 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3">
-                <Loader2 className="size-4 animate-spin" /> Thinking…
+              <div className="mr-4 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3" role="status" aria-busy="true">
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Thinking…
               </div>
             )}
           </div>
@@ -215,9 +221,11 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
                 placeholder={scoped ? "Try: draft a reply saying Thursday works" : "Try: archive all newsletters from last week"}
                 className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent px-2 py-2 text-[13.5px] text-fg outline-none placeholder:text-fg-3"
               />
-              <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg disabled:opacity-40">
-                <ArrowUp className="size-4" />
-              </button>
+              <Tooltip content="Send to Copilot">
+                <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg pointer-coarse:size-11 disabled:opacity-40">
+                  <ArrowUp className="size-4" strokeWidth={1.75} aria-hidden />
+                </button>
+              </Tooltip>
             </div>
             <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-3"><ShieldCheck className="size-3" /> Email content is untrusted and can’t add actions. Logged in Settings → Privacy.</p>
           </form>

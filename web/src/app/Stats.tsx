@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, AlertTriangle, BarChart3, Clock, Inbox, Menu, RefreshCw, Send, Timer } from "lucide-react";
+import { AlertCircle, BarChart3, Inbox, Menu, RefreshCw, Send, Timer, TriangleAlert } from "lucide-react";
 import type { InboxStats, StatsRange } from "@shared/stats";
 import { STATS_RANGES } from "@shared/stats";
 import { api, errorMessage, qs } from "@/lib/api";
@@ -65,14 +65,14 @@ export function StatsPage() {
             <>
               {d.errors.length > 0 && (
                 <p className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-                  <AlertTriangle className="size-4 text-warning" aria-hidden /> Some accounts couldn't be read: {d.errors.map((e) => e.message).join(" ")}
+                  <TriangleAlert className="size-4 text-warning" strokeWidth={1.75} aria-hidden /> Some accounts couldn't be read: {d.errors.map((e) => e.message).join(" ")}
                 </p>
               )}
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <Kpi icon={<Inbox className="size-4" />} label="Received" value={d.totals.received.toLocaleString()} />
                 <Kpi icon={<Send className="size-4" />} label="Sent" value={d.totals.sent.toLocaleString()} />
                 <Kpi icon={<Timer className="size-4" />} label="Average response" value={formatDuration(d.response.averageMinutes)} hint={d.response.replies ? `${d.response.replies} replies` : "No replies yet"} />
-                <Kpi icon={<Clock className="size-4" />} label="Median response" value={formatDuration(d.response.medianMinutes)} hint="Half your replies are faster" />
+                <Kpi icon={<Timer className="size-4" strokeWidth={1.75} aria-hidden />} label="Median response" value={formatDuration(d.response.medianMinutes)} hint="Half your replies are faster" />
               </div>
               <VolumeChart d={d} />
               <div className="grid gap-5 lg:grid-cols-2">
@@ -244,7 +244,8 @@ function HoursChart({ d }: { d: InboxStats }) {
 
 function StatsSkeleton() {
   return (
-    <div className="space-y-5" aria-label="Loading stats">
+    <div className="space-y-5" aria-busy="true" aria-label="Loading stats">
+      <span className="sr-only">Loading…</span>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>
       <Skeleton className="h-64" />
       <div className="grid gap-5 lg:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="h-64" /></div>

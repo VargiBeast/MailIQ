@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { singleKeysOff } from "@/lib/prefs";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { AlertTriangle, Check, ChevronDown, ChevronUp, Inbox, Loader2, Menu as MenuIcon, Paperclip, RefreshCw, Reply, Search, Sparkles, Star, Wand2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Inbox, Loader2, Menu as MenuIcon, Paperclip, RefreshCw, Reply, Search, Sparkles, Star, TriangleAlert, Wand2, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Category, Folder, ThreadSummary } from "@shared/mail";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { FOLDER_META } from "./nav";
 import { IconButton, Button } from "@/components/ui/Button";
 import { Menu, MenuCheckbox, MenuContent, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { cn } from "@/lib/cn";
@@ -14,7 +16,6 @@ import { useFocusMode } from "@/lib/focus";
 import { useThreadAction, useThreads, useDrafts, type ListArgs } from "@/lib/mail";
 import { useSession } from "@/lib/session";
 import { api, errorMessage } from "@/lib/api";
-import { FOLDER_META } from "./nav";
 import { useComposer } from "./composer/context";
 import { useCopilot } from "./copilot/context";
 import { DailyBriefCard } from "./DailyBrief";
@@ -236,7 +237,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
           {folder === "inbox" && categoriesAvailable ? (
             <Menu>
               <MenuTrigger asChild>
-                <button type="button" aria-label={`Inbox section: ${sectionLabel}. Change section`} className="-ml-1 flex items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-medium text-fg-3 hover:bg-surface-2 hover:text-fg focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]">
+                <button type="button" aria-label={`Inbox section: ${sectionLabel}. Change section`} className="-ml-1 flex items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-medium text-fg-3 hover:bg-surface-2 hover:text-fg">
                   {sectionLabel}<ChevronDown className="size-3.5" aria-hidden />
                 </button>
               </MenuTrigger>
@@ -279,7 +280,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
 
       {accountErrors.length > 0 && (
         <div role="alert" className="mx-3 mt-3 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-[12.5px] text-fg-2">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
           <span className="flex-1">{accountErrors.map((e) => e.message).join(" ")}</span>
           <Link to="/app/account#accounts" className="shrink-0 font-medium text-accent-ink hover:underline">Fix</Link>
         </div>
@@ -292,7 +293,7 @@ export function ThreadList({ onOpenSidebar, selectedKey, onThreadsChange }: { on
           <ListSkeleton />
         ) : threads.isError ? (
           <EmptyState
-            icon={<AlertTriangle className="size-5" />}
+            icon={<TriangleAlert className="size-5" />}
             title="Couldn't load your mail"
             description={errorMessage(threads.error)}
             action={<div className="flex gap-2"><Button onClick={() => void threads.refetch()}>Try again</Button><Link to="/app/account#accounts"><Button variant="ghost">Account settings</Button></Link></div>}
@@ -444,10 +445,11 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
         onPointerCancel={() => { cancelPress(); setOffset(0); }}
         onContextMenu={(e) => { if (press.current?.fired) e.preventDefault(); }}
       >
-        <div className="relative size-9 shrink-0">
+        <div className="relative size-9 shrink-0 pointer-coarse:size-11">
           <span className={cn("block transition-opacity", (picked || selecting) ? "opacity-0" : "group-hover:opacity-0 group-focus-within:opacity-0")}>
             <Avatar name={displayName(t.from)} email={t.from.email} size={36} />
           </span>
+          <Tooltip content={`Select: ${t.subject || "(no subject)"}`}>
           <button
             type="button"
             role="checkbox"
@@ -455,13 +457,14 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
             aria-label={`Select: ${t.subject || "(no subject)"}`}
             onClick={(e) => { e.stopPropagation(); onPick(e.shiftKey); }}
             className={cn(
-              "absolute inset-0 flex items-center justify-center rounded-full border transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
+              "absolute inset-0 flex items-center justify-center rounded-full border transition-opacity focus-visible:opacity-100",
               picked ? "border-accent bg-accent text-accent-fg opacity-100" : "border-line-strong bg-surface-2 text-transparent",
               !picked && (selecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
             )}
           >
-            <Check className="size-4" />
+            <Check className="size-4" strokeWidth={2.25} aria-hidden />
           </button>
+          </Tooltip>
         </div>
         <button type="button" onClick={(e) => { e.stopPropagation(); click(e); }} className="min-w-0 flex-1 text-left outline-none" aria-current={selected ? "true" : undefined}>
           <span className="flex items-baseline gap-2">
@@ -473,28 +476,38 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
             {t.unread && <span className="size-2 shrink-0 self-center rounded-full bg-accent" role="img" aria-label="Unread" />}
           </span>
           <span className={cn("mt-0.5 block truncate text-[13.5px]", t.unread ? "font-semibold text-fg" : "text-fg-2")}>
-            {t.important && <span className="mr-1 text-warning" title="Important" aria-label="Important">›</span>}
+            {t.important && (
+              <span role="img" className="mr-1 inline-flex text-warning" aria-label="Important" title="Important">
+                <FOLDER_META.important.icon className="size-3" strokeWidth={1.75} aria-hidden />
+              </span>
+            )}
             {t.subject}
           </span>
           <span className="mt-0.5 flex items-center gap-2">
             <span className="min-w-0 flex-1 truncate text-[13px] text-fg-3">{t.snippet}</span>
             {multiAccount && <span className="size-1.5 shrink-0 rounded-full" style={{ background: ["#a78bfa", "#38bdf8", "#f472b6", "#34d399", "#fbbf24"][Math.max(0, accIdx) % 5] }} title="Account" aria-hidden />}
-            {t.hasAttachments && <Paperclip className="size-3.5 shrink-0 text-fg-3" aria-label="Has attachments" />}
+            {t.hasAttachments && (
+              <span role="img" aria-label="Has attachments" title="Has attachments" className="inline-flex shrink-0 text-fg-3">
+                <Paperclip className="size-3.5" strokeWidth={1.75} aria-hidden />
+              </span>
+            )}
             {t.messageCount > 1 && (
               <span className={cn("inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold", "text-fg-3")} aria-label={`${t.messageCount} messages`}>{t.messageCount}</span>
             )}
             <span className="w-6 shrink-0" aria-hidden />
           </span>
         </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onStar(); }}
-          aria-label={t.starred ? "Unstar conversation" : "Star conversation"}
-          aria-pressed={t.starred}
-          className={cn("absolute bottom-[calc(var(--row-py,12px)-4px)] right-1.5 rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]", t.starred ? "text-amber-400" : "text-fg-3 hover:text-fg-2")}
-        >
-          <Star className="size-[18px]" fill={t.starred ? "currentColor" : "none"} strokeWidth={1.75} />
-        </button>
+        <Tooltip content="Star conversation">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onStar(); }}
+            aria-label="Star conversation"
+            aria-pressed={t.starred}
+            className="absolute bottom-[calc(var(--row-py,12px)-4px)] right-1.5 inline-flex items-center justify-center rounded-full p-1 text-fg-3 transition-colors hover:text-fg-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+          >
+            <Star className={cn("size-5", t.starred && "text-amber-400")} fill={t.starred ? "currentColor" : "none"} strokeWidth={t.starred ? 2.25 : 1.75} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
     </li>
   );
@@ -503,6 +516,7 @@ function Row({ t, selected, onOpen, onSwipeReply, onStar, multiAccount, picked, 
 function ListSkeleton() {
   return (
     <div className="space-y-1 p-3" aria-busy="true" aria-label="Loading conversations">
+      <span className="sr-only">Loading…</span>
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="flex gap-3 px-2 py-3">
           <Skeleton className="size-9 rounded-full" />
@@ -519,7 +533,7 @@ function ListSkeleton() {
 
 function DraftsList({ drafts, onOpen }: { drafts: ReturnType<typeof useDrafts>; onOpen: (d: { accountId: string; draftId: string }) => void }) {
   if (drafts.isLoading) return <ListSkeleton />;
-  if (drafts.isError) return <EmptyState icon={<AlertTriangle className="size-5" />} title="Couldn't load drafts" description={errorMessage(drafts.error)} action={<Button onClick={() => void drafts.refetch()}>Try again</Button>} />;
+  if (drafts.isError) return <EmptyState icon={<TriangleAlert className="size-5" />} title="Couldn't load drafts" description={errorMessage(drafts.error)} action={<Button onClick={() => void drafts.refetch()}>Try again</Button>} />;
   const list = drafts.data?.drafts ?? [];
   if (list.length === 0) return <EmptyState icon={<Inbox className="size-5" />} title="No drafts" description="Drafts you save in MailIQ or Gmail appear here." />;
   return (
@@ -565,7 +579,7 @@ function SearchPill({ inputRef, value, onChange, searching, aiOn, onOpenSidebar,
   const text = value.trim();
   const asks = aiOn && QUESTION.test(text);
   const showOptions = focused && text.length > 0;
-  const opt = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-fg-2 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none";
+  const opt = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-fg-2 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent-ring)]";
   const keep = (e: React.MouseEvent) => e.preventDefault(); // don't blur the input before the click lands
   const pick = (f: () => void) => { f(); setFocused(false); inputRef.current?.blur(); };
   return (
@@ -591,15 +605,22 @@ function SearchPill({ inputRef, value, onChange, searching, aiOn, onOpenSidebar,
           enterKeyHint={asks ? "send" : "search"}
           className="h-full min-w-0 flex-1 bg-transparent px-2 text-[15px] text-fg placeholder:text-fg-3 outline-none lg:text-[14px] [&::-webkit-search-cancel-button]:hidden"
         />
-        {searching && <Loader2 className="size-4 shrink-0 animate-spin text-fg-3" aria-label="Searching" />}
+        {searching && (
+          <span role="status" className="inline-flex shrink-0 text-fg-3">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            <span className="sr-only">Searching</span>
+          </span>
+        )}
         {aiOn && (
           <IconButton label="Ask with Copilot" onClick={() => onAsk(text)}>
             <Sparkles className="size-[18px]" />
           </IconButton>
         )}
-        <button type="button" onClick={() => navigate("/app/account#accounts")} aria-label="Accounts and settings" className="shrink-0 rounded-full p-0.5 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] lg:hidden">
-          <Avatar name={session?.user?.name ?? "Me"} email={session?.user?.email} src={session?.user?.picture} size={32} />
-        </button>
+        <Tooltip content="Accounts and settings">
+          <button type="button" onClick={() => navigate("/app/account#accounts")} aria-label="Accounts and settings" className="inline-flex shrink-0 items-center justify-center rounded-full p-0.5 pointer-coarse:min-h-11 pointer-coarse:min-w-11 lg:hidden">
+            <Avatar name={session?.user?.name ?? "Me"} email={session?.user?.email} src={session?.user?.picture} size={32} />
+          </button>
+        </Tooltip>
       </form>
       {showOptions && (
         <div role="group" aria-label="Search options" className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-2xl border border-line bg-surface py-1 shadow-[var(--shadow)]">

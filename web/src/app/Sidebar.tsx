@@ -1,7 +1,7 @@
 import { FocusMenu } from "./FocusMode";
 import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
-import { BarChart3, ChevronDown, MailMinus, Keyboard, LogOut, PenSquare, Plus, Search, Settings, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BarChart3, ChevronDown, MailMinus, Keyboard, LogOut, Pencil, Plus, Search, Settings, ShieldCheck, Sparkles, UserRound, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/ui/Avatar";
@@ -61,10 +61,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const item = (active: boolean) =>
     cn(
       "group flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-2.5 text-[13.5px] transition-colors duration-[var(--duration-fast)]",
+      "pointer-coarse:min-h-11",
       active
         ? "bg-accent-soft text-fg font-medium ring-1 ring-inset ring-[var(--ai-border)]"
         : "text-fg-2 hover:bg-surface-2 hover:text-fg",
     );
+  const glyph = (Icon: LucideIcon, active: boolean, className?: string) => (
+    <Icon className={cn("size-4", className)} aria-hidden strokeWidth={active ? 2.25 : 1.75} />
+  );
+  const searchActive = params.get("focus") === "search";
 
   return (
     <nav aria-label="Mailboxes" className="flex h-full flex-col gap-0.5 overflow-y-auto px-3 pb-4 pt-4 scroll-thin">
@@ -81,7 +86,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 <span className="block truncate text-[13.5px] font-semibold text-fg">{session?.settings?.profile.displayName || user.name}</span>
                 <span className="block truncate text-xs text-fg-3">{user.email}</span>
               </span>
-              <ChevronDown className="size-4 text-fg-3" aria-hidden />
+              <ChevronDown className="size-4 text-fg-3" strokeWidth={1.75} aria-hidden />
             </button>
           </MenuTrigger>
           <MenuContent align="start">
@@ -95,40 +100,54 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </Menu>
       )}
 
-      <Button variant="primary" className="mb-1 w-full" icon={<PenSquare className="size-4" />} onClick={() => { composer.open({ mode: "new" }); onNavigate?.(); }}>
+      <Button variant="primary" className="mb-1 w-full" icon={<Pencil className="size-4" strokeWidth={1.75} aria-hidden />} onClick={() => { composer.open({ mode: "new" }); onNavigate?.(); }}>
         Compose
       </Button>
       <button
         type="button"
         onClick={() => { navigate(withAccount(`/app/${["overview", "settings", "account", "stats", "newsletters"].includes(currentFolder) ? "inbox" : currentFolder}`, { focus: "search" })); onNavigate?.(); }}
-        className="mb-2 flex h-9 w-full items-center gap-3 rounded-[10px] px-2.5 text-[13.5px] text-fg-3 hover:bg-surface-2 hover:text-fg"
+        className={cn(item(searchActive), "mb-2 w-full")}
+        aria-current={searchActive ? "page" : undefined}
       >
-        <Search className="size-4" aria-hidden />
+        {glyph(Search, searchActive)}
         <span className="flex-1 text-left">Search</span>
         <kbd className="text-[11px] text-fg-3">/</kbd>
       </button>
       <button
         type="button"
         onClick={() => { onNavigate?.(); copilot.open(); }}
-        className="mb-2 -mt-1 flex h-9 w-full items-center gap-3 rounded-[10px] px-2.5 text-[13.5px] text-fg-2 hover:bg-surface-2 hover:text-fg"
+        className={cn(item(copilot.isOpen), "mb-2 -mt-1 w-full")}
+        aria-pressed={copilot.isOpen}
       >
-        <Sparkles className="size-4 text-accent-ink" aria-hidden />
+        {glyph(Sparkles, copilot.isOpen, "text-accent-ink")}
         <span className="flex-1 text-left">Copilot</span>
         <kbd className="text-[11px] text-fg-3">⌘J</kbd>
       </button>
 
       <NavLink to={withAccount("/app/overview")} onClick={onNavigate} className={({ isActive }) => item(isActive)}>
-        <OverviewIcon className="size-4 text-accent-ink" aria-hidden />
-        <span className="flex-1">AI Overview</span>
+        {({ isActive }) => (
+          <>
+            {glyph(OverviewIcon, isActive, "text-accent-ink")}
+            <span className="flex-1">AI Overview</span>
+          </>
+        )}
       </NavLink>
       <NavLink to={withAccount("/app/stats")} onClick={onNavigate} className={({ isActive }) => item(isActive)}>
-        <BarChart3 className="size-4" aria-hidden />
-        <span className="flex-1">Inbox stats</span>
+        {({ isActive }) => (
+          <>
+            {glyph(BarChart3, isActive)}
+            <span className="flex-1">Inbox stats</span>
+          </>
+        )}
       </NavLink>
       <FocusMenu className={item(false)} />
       <NavLink to={withAccount("/app/newsletters")} onClick={onNavigate} className={({ isActive }) => item(isActive)}>
-        <MailMinus className="size-4" aria-hidden />
-        <span className="flex-1">Unsubscribe</span>
+        {({ isActive }) => (
+          <>
+            {glyph(MailMinus, isActive)}
+            <span className="flex-1">Unsubscribe</span>
+          </>
+        )}
       </NavLink>
 
       {SIDEBAR_FOLDERS.map((f) => {
@@ -136,11 +155,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         const count = meta.countKey ? counts[meta.countKey] : undefined;
         const Icon = meta.icon;
         return (
-          <NavLink key={f} to={withAccount(`/app/${f}`)} onClick={onNavigate} className={() => item(currentFolder === f)}>
-            <Icon className="size-4" aria-hidden />
+          <NavLink key={f} to={withAccount(`/app/${f}`)} onClick={onNavigate} className={() => item(currentFolder === f)} aria-current={currentFolder === f ? "page" : undefined}>
+            <Icon className="size-4" aria-hidden strokeWidth={currentFolder === f ? 2.25 : 1.75} />
             <span className="flex-1">{meta.label}</span>
             {count !== undefined && count > 0 && (
-              <Badge tone={f === "inbox" ? "danger" : "muted"} className={f === "inbox" ? "bg-[#ef4444] text-white" : ""}>
+              <Badge tone={f === "inbox" ? "danger" : "muted"}>
                 <span className="sr-only">{f === "drafts" ? "drafts:" : "unread:"}</span>
                 {count > 999 ? "999+" : count}
               </Badge>
@@ -154,6 +173,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         to={location.pathname.startsWith("/app/settings") ? "/app/inbox" : location.pathname.split("/").slice(0, 3).join("/")}
         onClick={onNavigate}
         className={() => item(!account)}
+        aria-current={!account ? "page" : undefined}
       >
         <span className="size-2 rounded-full bg-gradient-to-br from-accent-300 to-accent-700" aria-hidden />
         <span className="flex-1">All inboxes</span>
@@ -168,6 +188,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             to={`/app/${["overview", "settings", "onboarding"].includes(currentFolder) ? "inbox" : currentFolder}?${p}`}
             onClick={onNavigate}
             className={() => item(account === a.id)}
+            aria-current={account === a.id ? "page" : undefined}
             title={a.email}
           >
             <span className="size-2 rounded-full" style={{ background: ACCOUNT_COLORS[i % ACCOUNT_COLORS.length] }} aria-hidden />
@@ -197,7 +218,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           const p = new URLSearchParams({ label: l.id, account: acc.accountId, name: l.name });
           const active = currentFolder === "label" && params.get("label") === l.id && params.get("account") === acc.accountId;
           return (
-            <NavLink key={`${acc.accountId}:${l.id}`} to={`/app/label?${p}`} onClick={onNavigate} className={() => item(active)}>
+            <NavLink key={`${acc.accountId}:${l.id}`} to={`/app/label?${p}`} onClick={onNavigate} className={() => item(active)} aria-current={active ? "page" : undefined}>
               <span
                 className="size-2 rounded-sm"
                 style={{ background: l.color?.backgroundColor ?? ACCOUNT_COLORS[accountIndex(acc.accountId) % ACCOUNT_COLORS.length] }}
@@ -211,8 +232,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       )}
 
       <div className="mt-auto pt-4">
-        <NavLink to="/app/settings" onClick={onNavigate} className={() => item(currentFolder === "settings")}>
-          <Settings className="size-4" aria-hidden />
+        <NavLink to="/app/settings" onClick={onNavigate} className={() => item(currentFolder === "settings")} aria-current={currentFolder === "settings" ? "page" : undefined}>
+          <Settings className="size-4" aria-hidden strokeWidth={currentFolder === "settings" ? 2.25 : 1.75} />
           <span className="flex-1">Settings</span>
         </NavLink>
         <button type="button" onClick={() => shortcuts.open()} className={cn(item(false), "w-full")}>

@@ -9,6 +9,7 @@ import { snoozePresets } from "@/lib/snooze";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "@/components/ui/Menu";
 import { cn } from "@/lib/cn";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { plural, runBulk, undoToast, type BulkAction } from "@/lib/bulk";
 
 
@@ -81,8 +82,8 @@ export function BulkBar({ selected, allVisible, onSelectAll, onClear, folder }: 
   const userLabels = [...new Map((labels.data?.accounts ?? []).flatMap((a) => a.labels.filter((l) => l.type === "user" && l.name !== "Snoozed")).map((l) => [l.name, l])).values()];
   const anyUnread = selected.some((t) => t.unread);
   const inTrash = folder === "trash";
-  const btn = "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-fg-2 hover:bg-surface-3 hover:text-fg disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]";
-  const spin = (a: string, icon: React.ReactNode) => (busy === a ? <Loader2 className="size-3.5 animate-spin" /> : icon);
+  const btn = "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-fg-2 hover:bg-surface-3 hover:text-fg disabled:opacity-40 pointer-coarse:min-h-11 pointer-coarse:min-w-11";
+  const spin = (a: string, icon: React.ReactNode) => (busy === a ? <><Loader2 className="size-3.5 animate-spin" aria-hidden /><span>Loading…</span></> : icon);
 
   return (
     <div
@@ -95,24 +96,24 @@ export function BulkBar({ selected, allVisible, onSelectAll, onClear, folder }: 
         aria-label="Select all visible conversations"
         checked={allVisible}
         onChange={(e) => onSelectAll(e.target.checked)}
-        className="ml-1 size-4 shrink-0 accent-[var(--accent)]"
+        className="ml-1 size-4 shrink-0 accent-[var(--accent)] pointer-coarse:size-11"
       />
       <span className="mr-1 shrink-0 px-1 text-[12.5px] font-semibold text-fg" aria-live="polite">{n} selected</span>
       {inTrash ? (
-        <button type="button" className={btn} disabled={busy !== null} onClick={() => act("untrash")}>{spin("untrash", <Inbox className="size-3.5" />)} Restore</button>
+        <button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "untrash" || undefined} onClick={() => act("untrash")}>{spin("untrash", <Inbox className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "untrash" ? null : " Restore"}</button>
       ) : folder === "inbox" ? (
-        <button type="button" className={btn} disabled={busy !== null} onClick={() => act("archive")} title="Archive (e)">{spin("archive", <Archive className="size-3.5" />)} Archive</button>
+        <button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "archive" || undefined} onClick={() => act("archive")} title="Archive (e)">{spin("archive", <Archive className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "archive" ? null : " Archive"}</button>
       ) : (
-        <button type="button" className={btn} disabled={busy !== null} onClick={() => act("inbox")}>{spin("inbox", <Inbox className="size-3.5" />)} Move to Inbox</button>
+        <button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "inbox" || undefined} onClick={() => act("inbox")}>{spin("inbox", <Inbox className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "inbox" ? null : " Move to Inbox"}</button>
       )}
       {anyUnread ? (
-        <button type="button" className={btn} disabled={busy !== null} onClick={() => act("read")}>{spin("read", <MailOpen className="size-3.5" />)} Mark read</button>
+        <button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "read" || undefined} onClick={() => act("read")}>{spin("read", <MailOpen className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "read" ? null : " Mark read"}</button>
       ) : (
-        <button type="button" className={btn} disabled={busy !== null} onClick={() => act("unread")}>{spin("unread", <Mail className="size-3.5" />)} Mark unread</button>
+        <button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "unread" || undefined} onClick={() => act("unread")}>{spin("unread", <Mail className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "unread" ? null : " Mark unread"}</button>
       )}
       {!inTrash && (
         <Menu>
-          <MenuTrigger asChild><button type="button" className={btn} disabled={busy !== null}>{spin("snooze", <Clock className="size-3.5" />)} Snooze</button></MenuTrigger>
+          <MenuTrigger asChild><button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "snooze" || undefined}>{spin("snooze", <Clock className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "snooze" ? null : " Snooze"}</button></MenuTrigger>
           <MenuContent>
             <MenuLabel>Snooze until…</MenuLabel>
             {snoozePresets().map((p) => <MenuItem key={p.id} icon={<Clock />} onSelect={() => void snooze(p.until, p.label)}>{p.label}</MenuItem>)}
@@ -121,7 +122,7 @@ export function BulkBar({ selected, allVisible, onSelectAll, onClear, folder }: 
       )}
       {userLabels.length > 0 && (
         <Menu>
-          <MenuTrigger asChild><button type="button" className={btn} disabled={busy !== null}>{spin("label_add", <Tag className="size-3.5" />)} Label</button></MenuTrigger>
+          <MenuTrigger asChild><button type="button" className={btn} disabled={busy !== null} aria-busy={busy === "label_add" || undefined}>{spin("label_add", <Tag className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "label_add" ? null : " Label"}</button></MenuTrigger>
           <MenuContent>
             <MenuLabel>Add label</MenuLabel>
             {userLabels.map((l) => <MenuItem key={l.name} icon={<Tag />} onSelect={() => void act("label_add", { name: l.name })}>{l.name}</MenuItem>)}
@@ -129,9 +130,11 @@ export function BulkBar({ selected, allVisible, onSelectAll, onClear, folder }: 
         </Menu>
       )}
       {!inTrash && (
-        <button type="button" className={cn(btn, "hover:text-danger")} disabled={busy !== null} onClick={() => setConfirmTrash(true)}>{spin("trash", <Trash2 className="size-3.5" />)} Delete</button>
+        <button type="button" className={cn(btn, "hover:text-danger")} disabled={busy !== null} aria-busy={busy === "trash" || undefined} onClick={() => setConfirmTrash(true)}>{spin("trash", <Trash2 className="size-3.5" strokeWidth={1.75} aria-hidden />)}{busy === "trash" ? null : " Delete"}</button>
       )}
-      <button type="button" onClick={onClear} className={cn(btn, "ml-auto")} aria-label="Clear selection (Esc)" title="Clear selection (Esc)"><X className="size-3.5" /></button>
+      <Tooltip content="Clear selection (Esc)">
+        <button type="button" onClick={onClear} className={cn(btn, "ml-auto")} aria-label="Clear selection (Esc)"><X className="size-3.5" strokeWidth={1.75} aria-hidden /></button>
+      </Tooltip>
       <ConfirmDialog
         open={confirmTrash}
         onOpenChange={setConfirmTrash}
