@@ -219,7 +219,34 @@ const loadComposer = () => import("./composer/Composer");
 const ComposerHost = lazy(() => loadComposer().then((m) => ({ default: m.ComposerHost })));
 
 function LazyComposer() {
-  const { requests } = useComposer();
+  const { requests, returnFocus } = useComposer();
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (requests.length) {
+      wasOpen.current = true;
+      return;
+    }
+    if (!wasOpen.current) return;
+    wasOpen.current = false;
+    const back = returnFocus.current;
+    returnFocus.current = null;
+    if (!back) return;
+    const focusOpener = () => {
+      if (back.isConnected) {
+        back.focus();
+        return;
+      }
+      // Mobile nav unmounts its Compose button while the composer is open, then mounts a new one.
+      const label = back.getAttribute("aria-label");
+      if (!label) return;
+      const next = [...document.querySelectorAll<HTMLElement>(`[aria-label="${CSS.escape(label)}"]`)].find((el) => {
+        const box = el.getBoundingClientRect();
+        return box.width > 0 && box.height > 0;
+      });
+      next?.focus();
+    };
+    focusOpener();
+  }, [requests, returnFocus]);
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500));
     idle(() => void loadComposer());
