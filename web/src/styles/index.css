@@ -285,14 +285,17 @@ body {
 .density-compact { --row-py: 8px; }
 .density-comfortable { --row-py: 12px; }
 
-/* Keyboard focus: visible, restrained, uses accent ring */
-:focus-visible {
-  outline: 2px solid var(--accent-ring);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-:focus:not(:focus-visible) {
-  outline: none;
+/* Keyboard focus lives in the base layer so component utilities can override it.
+   An unlayered rule beat every Tailwind focus utility and forced --radius-sm onto round controls.
+   The outline still follows the element's own border-radius. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent-ring);
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 .scroll-thin {
