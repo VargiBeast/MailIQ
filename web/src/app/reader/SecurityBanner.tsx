@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { Icon } from "@/components/ui/Icon";
 import { ShieldAlert, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import type { ThreadDetail } from "@shared/mail";
@@ -36,7 +37,7 @@ export function SecurityBanner({ thread }: { thread: ThreadDetail }) {
       className={cn("rounded-2xl border px-4 py-3 text-[13.5px] leading-relaxed animate-in", danger ? "border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_9%,transparent)]" : "border-[color-mix(in_srgb,var(--warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)]")}
     >
       <h2 className={cn("flex items-center gap-2 text-[13.5px] font-semibold", danger ? "text-danger" : "text-warning")}>
-        {danger ? <ShieldAlert className="size-4" aria-hidden /> : <TriangleAlert className="size-4" aria-hidden />}
+        {danger ? <Icon icon={ShieldAlert} /> : <Icon icon={TriangleAlert} />}
         {danger ? "Be careful: this looks like phishing" : "Check before you act on this email"}
       </h2>
       <ul className="mt-1.5 max-w-[70ch] list-disc space-y-0.5 pl-5 text-fg-2">
@@ -49,7 +50,7 @@ export function SecurityBanner({ thread }: { thread: ThreadDetail }) {
           </button>
         )}
         {aiOn && !review.data && (
-          <Button size="sm" variant="ai" icon={<Sparkles className="size-3.5" />} loading={review.isPending} onClick={() => review.mutate()}>
+          <Button size="sm" variant="ai" icon={<Icon icon={Sparkles} size="sm" />} loading={review.isPending} onClick={() => review.mutate()}>
             Ask Copilot to check
           </Button>
         )}
@@ -58,7 +59,7 @@ export function SecurityBanner({ thread }: { thread: ThreadDetail }) {
       {review.data && (
         <div className="mt-2.5 rounded-xl bg-surface/60 px-3 py-2.5" data-testid="security-review">
           <p className="flex items-center gap-1.5 font-semibold text-fg">
-            {review.data.verdict === "likely_safe" ? <ShieldCheck className="size-4 text-success" aria-hidden /> : <ShieldAlert className="size-4 text-danger" aria-hidden />}
+            {review.data.verdict === "likely_safe" ? <Icon icon={ShieldCheck} className="text-success" /> : <Icon icon={ShieldAlert} className="text-danger" />}
             {VERDICT[review.data.verdict]}
           </p>
           <ul className="mt-1 max-w-[70ch] list-disc space-y-0.5 pl-5 text-fg-2">{review.data.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>

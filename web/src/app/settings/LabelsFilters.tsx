@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Filter, Pencil, Plus, Tag, Trash2 } from "lucide-react";
@@ -71,15 +72,15 @@ function LabelsPanel({ accountId }: { accountId: string }) {
   const renameM = useMutation({ mutationFn: () => api.patch(`/mail/labels/${accountId}/${rename!.id}`, { name: name.trim() }), onSuccess: () => { toast.success("Label renamed"); setRename(null); done(); }, onError: (e) => toast.error(errorMessage(e)) });
   const removeM = useMutation({ mutationFn: () => api.del(`/mail/labels/${accountId}/${remove!.id}`), onSuccess: () => { toast.success("Label deleted"); setRemove(null); done(); }, onError: (e) => toast.error(errorMessage(e)) });
   return (
-    <Panel title="Labels" description="Labels are Gmail labels — changes apply to Gmail everywhere." actions={<Button size="sm" icon={<Plus className="size-3.5" />} onClick={() => setCreate(true)}>New label</Button>}>
+    <Panel title="Labels" description="Labels are Gmail labels — changes apply to Gmail everywhere." actions={<Button size="sm" icon={<Icon icon={Plus} size="sm" />} onClick={() => setCreate(true)}>New label</Button>}>
       {q.isLoading ? <Skeleton className="my-2 h-20 w-full" /> : q.isError ? <p className="py-3 text-[13px] text-danger">{errorMessage(q.error)}</p> : user.length === 0 ? <p className="py-4 text-[13px] text-fg-3">No labels yet.</p> : (
         <ul className="divide-y divide-line" aria-label="Labels">
           {user.map((l) => (
             <li key={l.id} className="flex items-center gap-3 py-2">
-              <Tag className="size-4 shrink-0" style={{ color: l.color?.backgroundColor ?? "var(--text-3)" }} />
+              <Icon icon={Tag} className="shrink-0" style={{ color: l.color?.backgroundColor ?? "var(--text-3)" }} />
               <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">{l.name}</span>
-              <IconButton size="sm" label={`Rename ${l.name}`} onClick={() => { setRename(l); setName(l.name); }}><Pencil className="size-3.5" /></IconButton>
-              <IconButton size="sm" label={`Delete ${l.name}`} onClick={() => setRemove(l)}><Trash2 className="size-3.5" /></IconButton>
+              <IconButton size="sm" label={`Rename ${l.name}`} onClick={() => { setRename(l); setName(l.name); }}><Icon icon={Pencil} size="sm" /></IconButton>
+              <IconButton size="sm" label={`Delete ${l.name}`} onClick={() => setRemove(l)}><Icon icon={Trash2} size="sm" /></IconButton>
             </li>
           ))}
         </ul>
@@ -124,7 +125,7 @@ function FiltersPanel({ accountId }: { accountId: string }) {
     return { when: when || "any message", then: then || "no action" };
   };
   return (
-    <Panel title="Filters" description="Gmail filters run on new mail, even when MailIQ isn't open." actions={<Button size="sm" icon={<Filter className="size-3.5" />} onClick={() => setOpen(true)}>New filter</Button>}>
+    <Panel title="Filters" description="Gmail filters run on new mail, even when MailIQ isn't open." actions={<Button size="sm" icon={<Icon icon={Filter} size="sm" />} onClick={() => setOpen(true)}>New filter</Button>}>
       {filters.isLoading ? <Skeleton className="my-2 h-16 w-full" /> : filters.isError ? <p className="py-3 text-[13px] text-danger">{errorMessage(filters.error)}</p> : !filters.data?.filters.length ? <p className="py-4 text-[13px] text-fg-3">No filters yet.</p> : (
         <ul className="divide-y divide-line" aria-label="Filters">
           {filters.data.filters.map((f) => {
@@ -135,7 +136,7 @@ function FiltersPanel({ accountId }: { accountId: string }) {
                   <p className="truncate text-fg"><span className="text-fg-3">When</span> {d.when}</p>
                   <p className="truncate text-fg-2"><span className="text-fg-3">Then</span> {d.then}</p>
                 </div>
-                <IconButton size="sm" label="Delete filter" onClick={() => setRemove(f)}><Trash2 className="size-3.5" /></IconButton>
+                <IconButton size="sm" label="Delete filter" onClick={() => setRemove(f)}><Icon icon={Trash2} size="sm" /></IconButton>
               </li>
             );
           })}

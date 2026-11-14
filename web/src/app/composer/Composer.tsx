@@ -1,18 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Bold, Italic, Underline, List, ListOrdered, Quote, Link2, Paperclip, Sparkles, Maximize2, Minimize2, X, Trash2, Send, Loader2, FileText, Wand2, ChevronDown, Undo2, FileStack,
+  Bold, Italic, Underline, List, ListOrdered, Quote, Link2, Paperclip, Sparkles, Maximize2, Minimize2, X, Trash2, Send, Loader2, FileText, Wand2, ChevronDown, Undo2, FileStack, Check,
 } from "lucide-react";
 import type { ThreadDetail } from "@shared/mail";
 import { Button, IconButton } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { ConfirmDialog, Dialog } from "@/components/ui/Dialog";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/Menu";
 import { Textarea } from "@/components/ui/Field";
-import { cn } from "@/lib/cn";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { sendWithUndo } from "@/lib/undoSend";
@@ -27,8 +29,79 @@ import { TemplateEditorDialog, TemplatePicker } from "./TemplatePicker";
 import { isTemplateShortcut, TEMPLATE_SHORTCUT_LABEL, templateToHtml } from "@/lib/templates";
 import type { Template } from "@shared/templates";
 import { MicButton } from "../voice/MicButton";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 const MAX_TOTAL = 3_500_000;
+
+/** Full-screen mobile composer: keep focus inside and mark the rest of the shell inert. */
+function useMobileComposerGuard(active: boolean, ref: RefObject<HTMLElement | null>, restoreTo: RefObject<HTMLElement | null>) {
+  // Capture during render, before the To field's autoFocus runs. The effect is
+  // too late: focus is already inside the composer, so close would land on body.
+  if (active && restoreTo.current === null && typeof document !== "undefined") {
+    const previous = document.activeElement;
+    const node = ref.current;
+    if (
+      previous instanceof HTMLElement &&
+      previous !== document.body &&
+      previous !== document.documentElement &&
+      !(node && node.contains(previous))
+    ) {
+      restoreTo.current = previous;
+    }
+  }
+  useEffect(() => {
+    if (!active) return;
+    const node = ref.current;
+    if (!node) return;
+    const previous = document.activeElement;
+    if (!restoreTo.current && previous instanceof HTMLElement && !node.contains(previous) && previous !== document.body) {
+      restoreTo.current = previous;
+    }
+    const parent = node.parentElement;
+    const inerted: HTMLElement[] = [];
+    if (parent) {
+      for (const child of Array.from(parent.children)) {
+        if (child === node || !(child instanceof HTMLElement) || child.hasAttribute("inert")) continue;
+        child.setAttribute("inert", "");
+        child.setAttribute("data-composer-inert", "");
+        inerted.push(child);
+      }
+    }
+    const focusable = () =>
+      [...node.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(
+        (el) => !el.closest("[hidden]"),
+      );
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const current = document.activeElement;
+      // Portaled menus and confirm dialogs live outside the composer node. Leave them alone.
+      if (current instanceof Element && !node.contains(current) && current.closest("[role=dialog], [role=menu], [data-radix-popper-content-wrapper]")) return;
+      const items = focusable();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      if (e.shiftKey && (current === first || !node.contains(current))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && current === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    if (!node.contains(document.activeElement)) focusable()[0]?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      for (const el of inerted) {
+        el.removeAttribute("inert");
+        el.removeAttribute("data-composer-inert");
+      }
+    };
+  }, [active, ref, restoreTo]);
+}
 
 export function ComposerHost() {
   const { requests, close } = useComposer();
@@ -104,8 +177,8 @@ function Composer({ request, onClose }: { request: ComposeRequest & { key: numbe
   }
   if (!init) {
     return (
-      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-fg-2 shadow-[var(--shadow)]">
-        <Loader2 className="size-4 animate-spin" /> Opening draft…
+      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-fg-2 shadow-[var(--shadow)]" role="status" aria-busy="true">
+        <Icon icon={Loader2} className="animate-spin" /> Opening draft…
       </div>
     );
   }
@@ -133,12 +206,18 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
   const [confirmAi, setConfirmAi] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [undoHtml, setUndoHtml] = useState<string | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [saveTemplate, setSaveTemplate] = useState<Partial<Template> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const reducedMotion = usePrefersReducedMotion();
   const aiOn = Boolean(config?.ai) && session?.settings?.ai.enabled !== false;
   const signature = session?.settings?.ai.signature ?? "";
 
@@ -209,8 +288,51 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       const ok = await saveDraft(true);
       if (ok) toast("Draft saved", { description: "Find it in Drafts." });
     }
-    onClose();
+    beginClose();
   };
+
+  const focusRestoreRef = useRef<HTMLElement | null>(null);
+  const beginClose = () => {
+    if (closingRef.current) return;
+    document.querySelectorAll<HTMLElement>("[data-composer-inert]").forEach((el) => {
+      el.removeAttribute("inert");
+      el.removeAttribute("data-composer-inert");
+    });
+    const back = focusRestoreRef.current;
+    focusRestoreRef.current = null;
+    if (back?.isConnected) back.focus();
+    if (reducedMotion || panelRef.current?.hidden) {
+      onClose();
+      return;
+    }
+    closingRef.current = true;
+    setClosing(true);
+  };
+
+  useEffect(() => {
+    if (!closing) return;
+    const el = panelRef.current;
+    if (!el) {
+      onCloseRef.current();
+      return;
+    }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      onCloseRef.current();
+    };
+    const onEnd = (e: AnimationEvent) => {
+      if (e.target !== el || e.animationName !== "scale-out") return;
+      finish();
+    };
+    el.addEventListener("animationend", onEnd);
+    const timer = window.setTimeout(finish, 480);
+    return () => {
+      el.removeEventListener("animationend", onEnd);
+      window.clearTimeout(timer);
+    };
+  }, [closing]);
 
   const discard = async () => {
     setConfirmDiscard(false);
@@ -224,7 +346,7 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       }
     }
     toast("Draft discarded");
-    onClose();
+    beginClose();
   };
 
   const send = async (aiConfirmed: boolean) => {
@@ -329,23 +451,23 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
 
   const title = mode === "reply" || mode === "replyAll" ? "Reply" : mode === "forward" ? "Forward" : mode === "draft" ? "Draft" : "New message";
   const accountEmail = accounts.find((a) => a.id === accountId)?.email;
+  const narrow = useMediaQuery("(max-width: 639px)");
+  const modal = narrow && !hidden && !closing;
+  useMobileComposerGuard(modal, panelRef, focusRestoreRef);
 
   return (
     <div
-      role="dialog"
+      ref={panelRef}
+      role={hidden ? undefined : "dialog"}
       data-composer=""
+      data-minimized={hidden ? "" : undefined}
       data-maximized={maximized ? "" : undefined}
-      aria-label={title}
-      aria-modal="false"
+      aria-label={hidden ? undefined : title}
+      aria-modal={hidden ? undefined : modal}
       hidden={hidden}
       onKeyDown={onKeyDown}
-      className={cn(
-        "fixed z-40 flex flex-col overflow-hidden border border-line-strong bg-surface shadow-[var(--shadow-lg)] animate-scale-in",
-        "inset-0 sm:inset-auto",
-        maximized
-          ? "sm:inset-6 sm:rounded-[var(--radius-xl)]"
-          : "sm:bottom-4 sm:right-4 sm:h-[min(640px,calc(100dvh-32px))] sm:w-[min(640px,calc(100vw-2rem))] sm:rounded-[var(--radius-xl)]",
-      )}
+      data-closing={closing ? "" : undefined}
+      className="composer-panel fixed z-40 flex flex-col overflow-hidden border border-line-strong bg-surface shadow-[var(--shadow-lg)] animate-scale-in"
     >
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-4">
         <h2 className="flex-1 text-[14px] font-semibold text-fg">{subject || title}</h2>
@@ -353,9 +475,9 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved to Drafts" : saveState === "error" ? "Not saved" : ""}
         </span>
         <IconButton label={maximized ? "Restore size" : "Maximize"} size="sm" className="hidden sm:inline-flex" onClick={() => setMaximized((v) => !v)}>
-          {maximized ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          {maximized ? <Icon icon={Minimize2} /> : <Icon icon={Maximize2} />}
         </IconButton>
-        <IconButton label="Close (saves draft)" size="sm" onClick={() => void close()}><X className="size-4" /></IconButton>
+        <IconButton label="Close (saves draft)" size="sm" onClick={() => void close()}><Icon icon={X} /></IconButton>
       </div>
 
       {accounts.length > 1 && (
@@ -388,11 +510,11 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       <div className="min-h-0 flex-1 overflow-y-auto scroll-thin" onClick={() => editor?.commands.focus()}>
         {aiGenerated && (
           <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-1.5 text-[12px] text-ai-title">
-            <Sparkles className="size-3.5" aria-hidden />
+            <Icon icon={Sparkles} size="sm" />
             <span className="flex-1">Contains AI-written text. You'll be asked to confirm before sending.</span>
             {undoHtml !== null && (
               <button type="button" className="flex items-center gap-1 font-medium hover:underline" onClick={(e) => { e.stopPropagation(); editor?.commands.setContent(undoHtml); setUndoHtml(null); }}>
-                <Undo2 className="size-3" /> Undo AI
+                <Icon icon={Undo2} size="xs" /> Undo AI
               </button>
             )}
           </div>
@@ -405,8 +527,9 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
         <EditorContent editor={editor} />
         {init.quote && (
           <div className="px-4 pb-3">
-            <button type="button" onClick={(e) => { e.stopPropagation(); setIncludeQuote((v) => !v); }} className="rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-pressed={includeQuote}>
-              {includeQuote ? (mode === "forward" ? "Forwarded message included ✓" : "Quoted text included ✓") : "Quoted text removed — click to include"}
+            <button type="button" onClick={(e) => { e.stopPropagation(); setIncludeQuote((v) => !v); }} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-[12px] text-fg-3 hover:text-fg" aria-pressed={includeQuote}>
+              {includeQuote && <Icon icon={Check} size="sm" active />}
+              {includeQuote ? (mode === "forward" ? "Forwarded message included" : "Quoted text included") : "Quoted text removed — click to include"}
             </button>
           </div>
         )}
@@ -414,10 +537,12 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
           <ul className="flex flex-wrap gap-2 px-4 pb-4" aria-label="Attachments">
             {attachments.map((a, i) => (
               <li key={`${a.filename}-${i}`} className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12.5px]">
-                <FileText className="size-3.5 text-fg-3" aria-hidden />
+                <Icon icon={FileText} size="sm" className="text-fg-3" />
                 <span className="max-w-[180px] truncate text-fg">{a.filename}</span>
                 <span className="text-fg-3">{formatBytes(a.size)}</span>
-                <button type="button" aria-label={`Remove ${a.filename}`} className="text-fg-3 hover:text-fg" onClick={(e) => { e.stopPropagation(); setAttachments(attachments.filter((_, j) => j !== i)); setDirty(true); }}><X className="size-3.5" /></button>
+                <Tooltip content={`Remove ${a.filename}`}>
+                  <button type="button" aria-label={`Remove ${a.filename}`} className="inline-flex items-center justify-center text-fg-3 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={(e) => { e.stopPropagation(); setAttachments(attachments.filter((_, j) => j !== i)); setDirty(true); }}><Icon icon={X} size="sm" /></button>
+                </Tooltip>
               </li>
             ))}
           </ul>
@@ -425,18 +550,18 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-line px-3 py-2.5">
-        <Button variant="primary" onClick={() => void send(false)} loading={sending} icon={<Send className="size-4" />}>Send</Button>
+        <Button variant="primary" onClick={() => void send(false)} loading={sending} icon={<Icon icon={Send} />}>Send</Button>
         <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { void addFiles(e.target.files); e.target.value = ""; }} aria-label="Attach files" />
-        <IconButton label="Attach files" onClick={() => fileRef.current?.click()}><Paperclip className="size-[18px]" /></IconButton>
-        <IconButton label={`Insert template (${TEMPLATE_SHORTCUT_LABEL})`} onClick={() => setTemplatesOpen(true)}><FileStack className="size-[18px]" /></IconButton>
+        <IconButton label="Attach files" onClick={() => fileRef.current?.click()}><Icon icon={Paperclip} size="lg" /></IconButton>
+        <IconButton label={`Insert template (${TEMPLATE_SHORTCUT_LABEL})`} onClick={() => setTemplatesOpen(true)}><Icon icon={FileStack} size="lg" /></IconButton>
         <MicButton onText={(t) => editor?.chain().focus().insertContent({ type: "text", text: `${t} ` }).run()} />
         {aiOn && (
           <>
-            <Button variant="ai" size="md" icon={<Sparkles className="size-3.5" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
+            <Button variant="ai" size="md" aria-busy={aiBusy || undefined} icon={aiBusy ? <><Icon icon={Loader2} size="sm" className="animate-spin" /><span className="sr-only">Loading…</span></> : <Icon icon={Sparkles} size="sm" />} onClick={() => setAiOpen(true)} disabled={aiBusy}>Write with AI</Button>
             <Menu>
               <MenuTrigger asChild>
-                <Button variant="ghost" size="md" disabled={aiBusy} icon={aiBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}>
-                  Rewrite <ChevronDown className="size-3.5" />
+                <Button variant="ghost" size="md" disabled={aiBusy} aria-busy={aiBusy || undefined} icon={aiBusy ? <><Icon icon={Loader2} size="sm" className="animate-spin" /><span className="sr-only">Loading…</span></> : <Icon icon={Wand2} size="sm" />}>
+                  Rewrite <Icon icon={ChevronDown} size="sm" />
                 </Button>
               </MenuTrigger>
               <MenuContent align="start">
@@ -454,8 +579,8 @@ function ComposerForm({ init, mode, onClose }: { init: Initial; mode: ComposeReq
         )}
         <div className="flex-1" />
         {accountEmail && accounts.length > 1 && <span className="hidden max-w-[160px] truncate text-[11.5px] text-fg-3 sm:inline">{accountEmail}</span>}
-        <IconButton label="Save draft now" onClick={() => void saveDraft(false)}><FileText className="size-[18px]" /></IconButton>
-        <IconButton label="Discard draft" onClick={() => setConfirmDiscard(true)}><Trash2 className="size-[18px]" /></IconButton>
+        <IconButton label="Save draft now" onClick={() => void saveDraft(false)}><Icon icon={FileText} size="lg" /></IconButton>
+        <IconButton label="Discard draft" onClick={() => setConfirmDiscard(true)}><Icon icon={Trash2} size="lg" /></IconButton>
       </div>
 
       <TemplatePicker
@@ -514,23 +639,23 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   }, [editor]);
   if (!editor) return null;
   const btn = (label: string, active: boolean, onClick: () => void, icon: React.ReactNode) => (
-    <IconButton label={label} size="sm" active={active} aria-pressed={active} onClick={onClick} className={active ? "bg-surface-3" : ""}>{icon}</IconButton>
+    <IconButton label={label} size="sm" active={active} aria-pressed={active} onClick={onClick}>{icon}</IconButton>
   );
   return (
     <div className="flex shrink-0 items-center gap-0.5 border-b border-line px-3 py-1" role="toolbar" aria-label="Formatting">
-      {btn("Bold", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Bold className="size-4" />)}
-      {btn("Italic", editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Italic className="size-4" />)}
-      {btn("Underline", editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), <Underline className="size-4" />)}
+      {btn("Bold", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Icon icon={Bold} active={editor.isActive("bold")} />)}
+      {btn("Italic", editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Icon icon={Italic} active={editor.isActive("italic")} />)}
+      {btn("Underline", editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), <Icon icon={Underline} active={editor.isActive("underline")} />)}
       <span className="mx-1 h-4 w-px bg-line" aria-hidden />
-      {btn("Bulleted list", editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <List className="size-4" />)}
-      {btn("Numbered list", editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered className="size-4" />)}
-      {btn("Quote", editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Quote className="size-4" />)}
+      {btn("Bulleted list", editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <Icon icon={List} active={editor.isActive("bulletList")} />)}
+      {btn("Numbered list", editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <Icon icon={ListOrdered} active={editor.isActive("orderedList")} />)}
+      {btn("Quote", editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Icon icon={Quote} active={editor.isActive("blockquote")} />)}
       {btn("Link", editor.isActive("link"), () => {
         if (editor.isActive("link")) return editor.chain().focus().unsetLink().run();
         const url = window.prompt("Link URL (https://…)");
         if (url && /^(https?:\/\/|mailto:)/i.test(url)) editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
         else if (url) toast.error("Links must start with https://, http:// or mailto:");
-      }, <Link2 className="size-4" />)}
+      }, <Icon icon={Link2} active={editor.isActive("link")} />)}
     </div>
   );
 }
@@ -573,7 +698,7 @@ function AiWriteDialog({ open, onOpenChange, threadContext, mode, onResult }: {
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={busy} icon={<Sparkles className="size-4" />} disabled={!instruction.trim() && mode !== "reply"}>Generate</Button>
+          <Button type="submit" variant="primary" loading={busy} icon={<Icon icon={Sparkles} />} disabled={!instruction.trim() && mode !== "reply"}>Generate</Button>
         </div>
       </form>
     </Dialog>

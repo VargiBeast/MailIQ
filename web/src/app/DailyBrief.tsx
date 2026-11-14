@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, ChevronDown, MessageSquareReply, RefreshCw, Star, Sun, X } from "lucide-react";
@@ -61,7 +62,7 @@ export function DailyBriefCard({ compact = false }: { compact?: boolean }) {
       </p>
     );
   }
-  if (q.isLoading) return <div className={cn(compact ? "mx-3 mt-1" : "")}><Skeleton className={compact ? "h-11 rounded-2xl" : "h-14 rounded-2xl"} /></div>;
+  if (q.isLoading) return <div className={cn(compact ? "mx-3 mt-1" : "")} aria-busy="true"><span className="sr-only">Loading…</span><Skeleton className={compact ? "h-11 rounded-2xl" : "h-14 rounded-2xl"} /></div>;
   if (q.isError || !b) return compact ? null : <p className="text-[13px] text-fg-3">Daily brief unavailable: {errorMessage(q.error)}</p>;
 
   const counts = [
@@ -112,24 +113,24 @@ export function DailyBriefCard({ compact = false }: { compact?: boolean }) {
     <section aria-label="Daily brief" data-testid="daily-brief" className={cn("rounded-2xl", compact ? cn("mx-3 mt-1", open ? "ai-block" : "bg-surface-2") : "ai-block")}>
       {compact ? (
         <div className="flex h-11 items-center gap-2.5 pl-3.5 pr-1">
-          <Sun className="size-4 shrink-0 text-ai-title" aria-hidden />
+          <Icon icon={Sun} className="shrink-0 text-ai-title" />
           <button type="button" className="flex min-w-0 flex-1 items-center gap-1.5 self-stretch text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
             <span className="sr-only">Daily brief: </span>
             <span className="min-w-0 truncate text-[13px] text-fg-2">{b.headline ?? (empty ? "Nothing needs your attention right now." : "Here's what matters today.")}</span>
-            <ChevronDown className={cn("size-4 shrink-0 text-fg-3 transition-transform", open && "rotate-180")} aria-hidden />
+            <Icon icon={ChevronDown} className={cn("shrink-0 text-fg-3 transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out)]", open && "rotate-180")} />
           </button>
           {open && b.aiStatus === "ok" && (
             <IconButton label="Regenerate brief" size="sm" onClick={() => void refresh()} disabled={refreshing}>
-              <RefreshCw className={cn("size-3.5", refreshing && "animate-spin")} />
+              <Icon icon={RefreshCw} size="sm" className={refreshing ? "animate-spin" : undefined} />
             </IconButton>
           )}
           <IconButton label="Hide brief for today" size="sm" onClick={() => { localStorage.setItem(DISMISS_KEY, today()); setDismissed(true); }}>
-            <X className="size-4" />
+            <Icon icon={X} />
           </IconButton>
         </div>
       ) : (
         <div className="flex items-start gap-3 px-4 py-3">
-          <Sun className="mt-0.5 size-4 shrink-0 text-ai-title" aria-hidden />
+          <Icon icon={Sun} className="mt-0.5 shrink-0 text-ai-title" />
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-medium uppercase tracking-wide text-ai-title">Daily brief</p>
             <p className="mt-0.5 text-[13.5px] text-fg">{b.headline ?? (empty ? "Nothing needs your attention right now." : "Here's what matters today.")}</p>
@@ -137,20 +138,20 @@ export function DailyBriefCard({ compact = false }: { compact?: boolean }) {
           </div>
           {b.aiStatus === "ok" && (
             <IconButton label="Regenerate brief" size="sm" onClick={() => void refresh()} disabled={refreshing}>
-              <RefreshCw className={cn("size-3.5", refreshing && "animate-spin")} />
+              <Icon icon={RefreshCw} size="sm" className={refreshing ? "animate-spin" : undefined} />
             </IconButton>
           )}
         </div>
       )}
-      {compact && open && counts && <p className="-mt-1 px-4 pb-2 pl-10 text-[12px] text-fg-3">{counts}</p>}
+      {compact && open && counts && <p className="animate-reveal -mt-1 px-4 pb-2 pl-10 text-[12px] text-fg-3">{counts}</p>}
       {open && !empty && (
-        <div className={cn("grid gap-4 border-t border-[var(--ai-border)] px-4 py-3", !compact && "md:grid-cols-3")}>
-          <BriefList title="Most important" icon={<Star className="size-3.5" />} items={b.important} max={compact ? 3 : undefined} />
-          <BriefList title="Awaiting your reply" icon={<MessageSquareReply className="size-3.5" />} items={b.awaitingReply} max={compact ? 3 : undefined} />
+        <div className={cn("animate-reveal grid gap-4 border-t border-[var(--ai-border)] px-4 py-3", !compact && "md:grid-cols-3")}>
+          <BriefList title="Most important" icon={<Icon icon={Star} size="sm" />} items={b.important} max={compact ? 3 : undefined} />
+          <BriefList title="Awaiting your reply" icon={<Icon icon={MessageSquareReply} size="sm" />} items={b.awaitingReply} max={compact ? 3 : undefined} />
           <div>
-            <BriefList title="Safe to archive" icon={<Archive className="size-3.5" />} items={b.safeToArchive} max={compact ? 3 : undefined} />
+            <BriefList title="Safe to archive" icon={<Icon icon={Archive} size="sm" />} items={b.safeToArchive} max={compact ? 3 : undefined} />
             {b.safeToArchive.length > 0 && (
-              <Button size="sm" variant="ghost" className="mt-2" icon={<Archive className="size-3.5" />} onClick={() => setConfirm(true)}>
+              <Button size="sm" variant="ghost" className="mt-2" icon={<Icon icon={Archive} size="sm" />} onClick={() => setConfirm(true)}>
                 Archive {b.safeToArchive.length}
               </Button>
             )}

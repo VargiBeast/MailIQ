@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
-import { Inbox, Menu, PenSquare, Search, Sparkles } from "lucide-react";
+import { Inbox, Menu, Pencil, Search, Sparkles, type LucideIcon } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import { useComposer } from "./composer/context";
 import { useCopilot } from "./copilot/context";
@@ -35,6 +36,12 @@ export function MobileNav() {
     return `/app/${searchBase}?${p}`;
   })();
 
+  const inboxActive = folder === "inbox" && !params.get("focus") && !inSettings && !inAccount;
+  const searchActive = params.get("focus") === "search" || folder === "search";
+  const composeActive = composer.requests.length > 0;
+  const copilotActive = copilot.isOpen;
+  const moreActive = inSettings || inAccount;
+
   const tab = (active: boolean) =>
     cn(
       "flex min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10.5px] font-medium",
@@ -42,6 +49,7 @@ export function MobileNav() {
       "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent-ring)]",
       active ? "text-accent-ink" : "text-fg-3 active:text-fg-2",
     );
+  const glyph = (icon: LucideIcon, active: boolean) => <Icon icon={icon} size="lg" active={active} />;
 
   return (
     <nav
@@ -53,45 +61,48 @@ export function MobileNav() {
       )}
     >
       <div className="mx-auto flex h-14 max-w-lg items-stretch">
-        <NavLink to={inboxTo} className={() => tab(folder === "inbox" && !params.get("focus") && !inSettings && !inAccount)} end>
-          <Inbox className="size-[20px]" aria-hidden strokeWidth={folder === "inbox" ? 2.25 : 1.75} />
+        <NavLink to={inboxTo} className={() => tab(inboxActive)} aria-current={inboxActive ? "page" : undefined} end>
+          {glyph(Inbox, inboxActive)}
           Inbox
         </NavLink>
 
         <button
           type="button"
-          className={tab(params.get("focus") === "search" || folder === "search")}
+          className={tab(searchActive)}
           onClick={() => navigate(searchTo)}
           aria-label="Search mail"
+          aria-current={searchActive ? "page" : undefined}
         >
-          <Search className="size-[20px]" aria-hidden strokeWidth={1.75} />
+          {glyph(Search, searchActive)}
           Search
         </button>
 
         <button
           type="button"
-          className={cn(tab(false), "-mt-2 text-accent-ink")}
+          className={cn(tab(composeActive), "-mt-2 text-accent-ink")}
           onClick={() => composer.open({ mode: "new" })}
           aria-label="Compose"
+          aria-current={composeActive ? "page" : undefined}
         >
-          <span className="flex size-10 items-center justify-center rounded-full bg-accent text-accent-fg shadow-[0_4px_14px_-4px_var(--accent)]">
-            <PenSquare className="size-[18px]" aria-hidden />
+          <span className={cn("flex size-10 items-center justify-center rounded-full bg-accent text-accent-fg shadow-[0_4px_14px_-4px_var(--accent)]", composeActive && "ring-2 ring-accent-ink ring-offset-2 ring-offset-surface")}>
+            {glyph(Pencil, composeActive)}
           </span>
           Compose
         </button>
 
-        <button type="button" className={tab(false)} onClick={() => copilot.open()} aria-label="Open Copilot">
-          <Sparkles className="size-[20px]" aria-hidden strokeWidth={1.75} />
+        <button type="button" className={tab(copilotActive)} onClick={() => copilot.open()} aria-label="Open Copilot" aria-current={copilotActive ? "page" : undefined}>
+          {glyph(Sparkles, copilotActive)}
           Copilot
         </button>
 
         <button
           type="button"
-          className={tab(inSettings || inAccount)}
+          className={tab(moreActive)}
           onClick={() => SidebarContext.open()}
           aria-label="More navigation"
+          aria-current={moreActive ? "page" : undefined}
         >
-          <Menu className="size-[20px]" aria-hidden strokeWidth={1.75} />
+          {glyph(Menu, moreActive)}
           More
         </button>
       </div>

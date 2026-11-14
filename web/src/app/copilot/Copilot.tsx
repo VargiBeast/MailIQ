@@ -1,18 +1,17 @@
 import * as RD from "@radix-ui/react-dialog";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useMatch, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertTriangle, Archive, ArrowUp, Check, ChevronDown, FilePen, Inbox, Loader2, Mail, MailOpen, Search, Send, ShieldCheck,
-  Maximize2, Minimize2, Sparkles, Star, StarOff, Tag, Trash2, Undo2, X,
-} from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowUp, Loader2, Maximize2, Minimize2, ShieldCheck, Sparkles, X } from "lucide-react";
 import type { ThreadSummary } from "@shared/mail";
-import type { ActionResult, CopilotActionType, CopilotReply, ExecuteResult, PlanAction, PlanPreview } from "@shared/copilot";
-import { api, ApiError, errorMessage } from "@/lib/api";
+import type { CopilotReply, PlanPreview } from "@shared/copilot";
+import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/cn";
-import { displayName, listDate } from "@/lib/format";
-import { Button, IconButton } from "@/components/ui/Button";
+import { scrollBehavior } from "@/lib/motion";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { Kbd } from "@/components/ui/misc";
 import { useCopilot } from "./context";
 import { buildCopilotPlanBody, mapCopilotReply } from "./planRequest";
@@ -75,7 +74,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   }, [open]);
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: scrollBehavior() });
   }, [messages]);
 
   const push = (m: NewMsg) => setMessages((xs) => [...xs, { ...m, id: nextId++ } as Msg]);
@@ -100,39 +99,45 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   }
 
   const prompts = scoped ? THREAD_PROMPTS : INBOX_PROMPTS;
+  const onCloseAutoFocus = useOverlayReturnFocus(open);
 
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] data-[state=open]:animate-in" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
+          data-expanded={expanded ? "true" : "false"}
+          onCloseAutoFocus={onCloseAutoFocus}
           className={cn(
-            "fixed z-50 flex flex-col border border-line-strong bg-surface shadow-[var(--shadow-lg)] outline-none animate-scale-in",
-            expanded
-              ? "inset-3 max-h-[calc(100%-1.5rem)] rounded-[var(--radius-xl)] sm:inset-x-[12%] sm:inset-y-8"
-              : "bottom-0 right-0 top-0 w-full max-w-md border-l sm:rounded-l-[var(--radius-xl)]",
+            "copilot-panel fixed z-50 flex flex-col border border-line-strong bg-surface shadow-[var(--shadow-lg)] outline-none",
+            "motion-scale",
           )}
         >
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-            <Sparkles className="size-4 text-accent-ink" />
+            <Icon icon={Sparkles} className="text-accent-ink" />
             <RD.Title className="text-[14.5px] font-semibold text-fg">MailIQ Copilot</RD.Title>
+            <RD.Description className="sr-only">Ask about your mail. Copilot only proposes actions; nothing is sent until you confirm.</RD.Description>
             <span className="hidden text-[11px] text-fg-3 sm:inline" title="Toggle Copilot"><Kbd>⌘J</Kbd></span>
             <div className="ml-auto flex items-center gap-1">
-              <button
-                type="button"
-                className="hidden rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg sm:inline-flex focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]"
-                onClick={() => setExpanded((v) => !v)}
-                aria-label={expanded ? "Dock to the side" : "Expand Copilot"}
-              >
-                {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-              </button>
-              <RD.Close className="rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
-                <X className="size-4" />
-              </RD.Close>
+              <Tooltip content={expanded ? "Dock to the side" : "Expand Copilot"}>
+                <button
+                  type="button"
+                  className="hidden items-center justify-center rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11 sm:inline-flex focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]"
+                  onClick={() => setExpanded((v) => !v)}
+                  aria-label={expanded ? "Dock to the side" : "Expand Copilot"}
+                >
+                  {expanded ? <Icon icon={Minimize2} /> : <Icon icon={Maximize2} />}
+                </button>
+              </Tooltip>
+              <Tooltip content="Close">
+                <RD.Close className="inline-flex items-center justify-center rounded-[var(--radius-sm)] p-1.5 text-fg-3 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 hover:text-fg pointer-coarse:min-h-11 pointer-coarse:min-w-11 focus-visible:outline-2 focus-visible:outline-[var(--accent-ring)]" aria-label="Close">
+                  <Icon icon={X} />
+                </RD.Close>
+              </Tooltip>
             </div>
           </div>
 
-          <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 scroll-thin">
+          <div ref={listRef} aria-busy={ask.isPending || undefined} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 scroll-thin">
             {!aiReady && (
               <p className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3">
                 AI isn’t configured on this server. Add an AI provider key (see docs/SETUP.md) to use Copilot.
@@ -159,6 +164,8 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               <div key={m.id} className={cn("rounded-xl px-3 py-2 text-[13.5px]", m.role === "user" ? "ml-8 bg-accent text-accent-fg" : m.role === "error" ? "border border-danger/40 bg-danger/10 text-fg" : "mr-4 border border-line bg-surface-2 text-fg")}>
                 {m.role === "plan" ? (
                   <PlanCard plan={m.plan} onOpenThread={(accountId, threadId) => navigate(`/app/inbox/${accountId}/${threadId}`)} />
+                ) : m.role === "assistant" ? (
+                  <ReplyText text={m.text} />
                 ) : (
                   <p className="whitespace-pre-wrap">{m.text}</p>
                 )}
@@ -176,8 +183,12 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
               </div>
             ))}
             {ask.isPending && (
-              <div className="mr-4 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3">
-                <Loader2 className="size-4 animate-spin" /> Thinking…
+              <div className="mr-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[13px] text-fg-3" role="status" aria-live="polite">
+                <p>Thinking…</p>
+                <div className="mt-2 space-y-2" aria-hidden>
+                  <div className="shimmer h-3 w-full rounded-[var(--radius-sm)]" />
+                  <div className="shimmer h-3 w-4/5 rounded-[var(--radius-sm)]" />
+                </div>
               </div>
             )}
           </div>
@@ -215,15 +226,30 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
                 placeholder={scoped ? "Try: draft a reply saying Thursday works" : "Try: archive all newsletters from last week"}
                 className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent px-2 py-2 text-[13.5px] text-fg outline-none placeholder:text-fg-3"
               />
-              <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg disabled:opacity-40">
-                <ArrowUp className="size-4" />
-              </button>
+              <Tooltip content="Send to Copilot">
+                <button type="submit" disabled={!input.trim() || ask.isPending || !aiReady} aria-label="Send to Copilot" aria-busy={ask.isPending || undefined} className="mb-1.5 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-fg transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-out)] pointer-coarse:size-11 disabled:opacity-40">
+                  {ask.isPending ? <Icon icon={Loader2} className="animate-spin" /> : <Icon icon={ArrowUp} />}
+                  {ask.isPending && <span className="sr-only">Loading…</span>}
+                </button>
+              </Tooltip>
             </div>
-            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-3"><ShieldCheck className="size-3" /> Email content is untrusted and can’t add actions. Logged in Settings → Privacy.</p>
+            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-3"><Icon icon={ShieldCheck} size="xs" /> Email content is untrusted and can’t add actions. Logged in Settings → Privacy.</p>
           </form>
         </RD.Content>
       </RD.Portal>
     </RD.Root>
+  );
+}
+
+/** Fade each paragraph in. The text is already complete — this is not token streaming. */
+function ReplyText({ text }: { text: string }) {
+  const blocks = text.split(/\n{2,}/);
+  return (
+    <div className="reply-stagger space-y-2">
+      {blocks.map((part, i) => (
+        <p key={i} className="whitespace-pre-wrap">{part}</p>
+      ))}
+    </div>
   );
 }
 
@@ -232,7 +258,7 @@ export function PlanCard({ plan, onOpenThread }: { plan: PlanPreview; onOpenThre
   return (
     <div className="space-y-3 p-1">
       <p className="text-[13.5px] text-fg">{plan.summary}</p>
-      <ul className="space-y-2">
+      <ul className="reply-stagger space-y-2">
         {plan.actions.map((a) => (
           <li key={a.index} className="rounded-xl border border-line bg-surface-2 px-3 py-2">
             <p className="text-[13px] font-medium text-fg">{a.title}</p>

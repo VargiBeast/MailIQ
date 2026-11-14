@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -138,7 +139,7 @@ function AccountsSection() {
                     {scopeText(a.scopes).map((t) => <li key={t}>{t}</li>)}
                   </ul>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {a.status !== "active" && <Button size="sm" icon={<RefreshCw className="size-3.5" />} onClick={() => { window.location.href = `/api/auth/google/start?mode=link&account=${a.id}`; }}>Reconnect</Button>}
+                    {a.status !== "active" && <Button size="sm" icon={<Icon icon={RefreshCw} size="sm" />} onClick={() => { window.location.href = `/api/auth/google/start?mode=link&account=${a.id}`; }}>Reconnect</Button>}
                     <Button size="sm" variant="ghost" onClick={() => setRemove(a)}>Disconnect</Button>
                   </div>
                 </div>
@@ -147,9 +148,9 @@ function AccountsSection() {
           </ul>
         )}
         <button type="button" onClick={() => setAdding(true)} className="flex w-full items-center gap-3 border-t border-line py-3 text-left text-[14px] text-fg hover:text-accent-ink" data-add-account="">
-          <span className="flex size-10 items-center justify-center rounded-full bg-surface-2"><Plus className="size-4" aria-hidden /></span>
+          <span className="flex size-10 items-center justify-center rounded-full bg-surface-2"><Icon icon={Plus} /></span>
           <span className="flex-1">Add account<span className="block text-[12px] text-fg-3">Gmail, iCloud, Yahoo, Fastmail or other IMAP mail</span></span>
-          <ChevronRight className="size-4 text-fg-3" aria-hidden />
+          <Icon icon={ChevronRight} className="text-fg-3" />
         </button>
       </Panel>
       <AddAccountDialog open={adding} onOpenChange={setAdding} />
@@ -191,14 +192,14 @@ function SecuritySection() {
                   <p className="truncate text-[13.5px] text-fg">{describeUa(s.userAgent)} {s.current && <Badge className="ml-1">This device</Badge>}</p>
                   <p className="text-xs text-fg-3">Signed in {relative(s.createdAt)} · active {relative(s.lastSeenAt)}</p>
                 </div>
-                {s.current ? <Button size="sm" variant="ghost" icon={<LogOut className="size-3.5" />} onClick={() => logout.mutate()}>Sign out</Button> : <Button size="sm" variant="ghost" onClick={() => revoke.mutate(s.id)}>Revoke</Button>}
+                {s.current ? <Button size="sm" variant="ghost" icon={<Icon icon={LogOut} size="sm" />} onClick={() => logout.mutate()}>Sign out</Button> : <Button size="sm" variant="ghost" onClick={() => revoke.mutate(s.id)}>Revoke</Button>}
               </li>
             ))}
           </ul>
         )}
         <div className="flex flex-wrap gap-2 border-t border-line py-3">
           <Button size="sm" disabled={others === 0} loading={revokeOthers.isPending} onClick={() => revokeOthers.mutate()}>Sign out other sessions</Button>
-          <Button size="sm" variant="ghost" icon={<LogOut className="size-3.5" />} onClick={() => setConfirmAll(true)}>Sign out everywhere</Button>
+          <Button size="sm" variant="ghost" icon={<Icon icon={LogOut} size="sm" />} onClick={() => setConfirmAll(true)}>Sign out everywhere</Button>
         </div>
       </Panel>
       <ConfirmDialog open={confirmAll} onOpenChange={setConfirmAll} title="Sign out everywhere?" description="Every browser, this one included, is signed out of MailIQ. Your Gmail connection stays." confirmLabel="Sign out everywhere" loading={everywhere.isPending} onConfirm={() => everywhere.mutate()} />
@@ -265,13 +266,13 @@ function DataSection() {
       </Panel>
       <Panel title="Export your data" description="Download everything above as JSON. OAuth tokens are never included.">
         <div className="py-3">
-          <Button icon={<Download className="size-4" />} onClick={() => { window.location.href = "/api/privacy/export"; }}>Download export</Button>
+          <Button icon={<Icon icon={Download} />} onClick={() => { window.location.href = "/api/privacy/export"; }}>Download export</Button>
         </div>
       </Panel>
       <section aria-labelledby="danger-zone" className="px-1 pt-4">
         <h2 id="danger-zone" className="text-[13px] font-medium text-fg-2">Delete account</h2>
         <p className="mt-1 text-[12.5px] text-fg-3">Permanently deletes your MailIQ profile, settings, sessions, templates, notes and logs, and revokes MailIQ's access at connected providers. Your mailbox messages are not touched.</p>
-        <Button className="mt-3" size="sm" variant="ghost" icon={<Trash2 className="size-3.5" />} onClick={() => setOpen(true)}>Delete my MailIQ account…</Button>
+        <Button className="mt-3" size="sm" variant="ghost" icon={<Icon icon={Trash2} size="sm" />} onClick={() => setOpen(true)}>Delete my MailIQ account…</Button>
       </section>
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setTyped(""); }} title="Delete your MailIQ account?" description={`This can't be undone. Type “${DELETE_ACCOUNT_PHRASE}” to confirm.`}>
         <form onSubmit={(e) => { e.preventDefault(); if (typed === DELETE_ACCOUNT_PHRASE) del.mutate(); }} className="space-y-4">

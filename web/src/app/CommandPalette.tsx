@@ -1,18 +1,25 @@
 import * as RD from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { useMatch, useNavigate } from "react-router-dom";
 import { ACCENTS } from "@shared/settings";
 import { FOCUS_CHOICES } from "@shared/focus";
 import { FOCUS_LABELS, useFocusMode } from "@/lib/focus";
 import {
-  Archive, BarChart3, Bookmark, Clock, CornerDownLeft, File, FileStack, Inbox, Keyboard, Mail, MailOpen, Moon, PenLine, PenSquare, MailMinus, Palette, Focus, Search, SearchCheck, Send, StickyNote, Settings, ShieldCheck, Sparkles, Star, Sun, Tag, Trash2, UserRound } from "lucide-react";
+  BarChart3, CornerDownLeft, FileStack, Keyboard, Mail, MailOpen, Moon, Pencil, MailMinus, Palette, Focus, Search, SearchCheck, StickyNote, Settings, ShieldCheck, Sparkles, Sun, Tags, UserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
 import { useSession } from "@/lib/session";
 import { useUpdateSettings } from "@/lib/settings";
 import { useComposer } from "./composer/context";
 import { useCopilot } from "./copilot/context";
 import { useShortcutsDialog } from "./Shortcuts";
+import { FOLDER_META, OverviewIcon } from "./nav";
 import { filterCommands, type Command } from "./commands";
+
+function ico(icon: LucideIcon) {
+  return <Icon icon={icon} size="md" />;
+}
 
 interface Runnable extends Command {
   icon: ReactNode;
@@ -54,49 +61,49 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     const theme = session?.settings?.appearance.theme ?? "dark";
     const accent = session?.settings?.appearance.accent ?? "purple";
     const list: Runnable[] = [
-      { id: "copilot", group: "Copilot", title: "Open Copilot", keywords: "ai ask assistant", icon: <Sparkles />, run: () => copilot.open() },
-      { id: "compose", group: "Actions", title: "Compose new email", keywords: "write new message", shortcut: "c", icon: <PenSquare />, run: () => composer.open({ mode: "new" }) },
-      { id: "search", group: "Actions", title: "Search mail", keywords: "find", shortcut: "/", icon: <Search />, run: () => navigate("/app/inbox?focus=search") },
-      { id: "go-overview", group: "Go to", title: "AI Overview", keywords: "briefing radar follow-up", shortcut: "g o", icon: <Sparkles />, run: go("/app/overview") },
-      { id: "go-inbox", group: "Go to", title: "Inbox", shortcut: "g i", icon: <Inbox />, run: go("/app/inbox") },
-      { id: "go-starred", group: "Go to", title: "Starred", shortcut: "g s", icon: <Star />, run: go("/app/starred") },
-      { id: "go-snoozed", group: "Go to", title: "Snoozed", icon: <Clock />, run: go("/app/snoozed") },
-      { id: "go-later", group: "Go to", title: "Read later", keywords: "saved bookmarks weekend newsletters", icon: <Bookmark />, run: go("/app/later") },
-      { id: "go-stats", group: "Go to", title: "Inbox stats", keywords: "statistics volume top senders response time analytics", icon: <BarChart3 />, run: go("/app/stats") },
-      { id: "go-unsubscribe", group: "Go to", title: "Unsubscribe assistant", keywords: "newsletters mailing lists unsubscribe clean up senders", icon: <MailMinus />, run: go("/app/newsletters") },
-      { id: "go-sent", group: "Go to", title: "Sent", shortcut: "g t", icon: <Send />, run: go("/app/sent") },
-      { id: "go-drafts", group: "Go to", title: "Drafts", shortcut: "g d", icon: <File />, run: go("/app/drafts") },
-      { id: "go-archive", group: "Go to", title: "Archive", icon: <Archive />, run: go("/app/archive") },
-      { id: "go-trash", group: "Go to", title: "Trash", icon: <Trash2 />, run: go("/app/trash") },
-      { id: "settings", group: "Settings", title: "Open settings", keywords: "preferences", icon: <Settings />, run: go("/app/settings") },
-      { id: "account", group: "Settings", title: "Account", keywords: "profile connected accounts sessions sign out export delete", icon: <UserRound />, run: go("/app/account") },
-      { id: "privacy", group: "Settings", title: "Privacy dashboard", keywords: "ai log exclusions export", icon: <ShieldCheck />, run: go("/app/settings/privacy") },
-      { id: "labels", group: "Settings", title: "Labels & filters", icon: <Tag />, run: go("/app/settings/labels") },
-      { id: "templates", group: "Settings", title: "Templates (saved replies)", keywords: "snippets canned responses", icon: <FileStack />, run: go("/app/settings/templates") },
-      { id: "signatures", group: "Settings", title: "Signatures & sender name", keywords: "signature display name from send-as", icon: <PenLine />, run: go("/app/settings/templates") },
+      { id: "copilot", group: "Copilot", title: "Open Copilot", keywords: "ai ask assistant", icon: ico(Sparkles), run: () => copilot.open() },
+      { id: "compose", group: "Actions", title: "Compose new email", keywords: "write new message", shortcut: "c", icon: ico(Pencil), run: () => composer.open({ mode: "new" }) },
+      { id: "search", group: "Actions", title: "Search mail", keywords: "find", shortcut: "/", icon: ico(Search), run: () => navigate("/app/inbox?focus=search") },
+      { id: "go-overview", group: "Go to", title: "AI Overview", keywords: "briefing radar follow-up", shortcut: "g o", icon: ico(OverviewIcon), run: go("/app/overview") },
+      { id: "go-inbox", group: "Go to", title: FOLDER_META.inbox.label, shortcut: "g i", icon: ico(FOLDER_META.inbox.icon), run: go("/app/inbox") },
+      { id: "go-starred", group: "Go to", title: FOLDER_META.starred.label, shortcut: "g s", icon: ico(FOLDER_META.starred.icon), run: go("/app/starred") },
+      { id: "go-snoozed", group: "Go to", title: FOLDER_META.snoozed.label, icon: ico(FOLDER_META.snoozed.icon), run: go("/app/snoozed") },
+      { id: "go-later", group: "Go to", title: FOLDER_META.later.label, keywords: "saved bookmarks weekend newsletters", icon: ico(FOLDER_META.later.icon), run: go("/app/later") },
+      { id: "go-stats", group: "Go to", title: "Inbox stats", keywords: "statistics volume top senders response time analytics", icon: ico(BarChart3), run: go("/app/stats") },
+      { id: "go-unsubscribe", group: "Go to", title: "Unsubscribe assistant", keywords: "newsletters mailing lists unsubscribe clean up senders", icon: ico(MailMinus), run: go("/app/newsletters") },
+      { id: "go-sent", group: "Go to", title: FOLDER_META.sent.label, shortcut: "g t", icon: ico(FOLDER_META.sent.icon), run: go("/app/sent") },
+      { id: "go-drafts", group: "Go to", title: FOLDER_META.drafts.label, shortcut: "g d", icon: ico(FOLDER_META.drafts.icon), run: go("/app/drafts") },
+      { id: "go-archive", group: "Go to", title: FOLDER_META.archive.label, icon: ico(FOLDER_META.archive.icon), run: go("/app/archive") },
+      { id: "go-trash", group: "Go to", title: FOLDER_META.trash.label, icon: ico(FOLDER_META.trash.icon), run: go("/app/trash") },
+      { id: "settings", group: "Settings", title: "Open settings", keywords: "preferences", icon: ico(Settings), run: go("/app/settings") },
+      { id: "account", group: "Settings", title: "Account", keywords: "profile connected accounts sessions sign out export delete", icon: ico(UserRound), run: go("/app/account") },
+      { id: "privacy", group: "Settings", title: "Privacy dashboard", keywords: "ai log exclusions export", icon: ico(ShieldCheck), run: go("/app/settings/privacy") },
+      { id: "labels", group: "Settings", title: "Labels & filters", icon: ico(Tags), run: go("/app/settings/labels") },
+      { id: "templates", group: "Settings", title: "Templates (saved replies)", keywords: "snippets canned responses", icon: ico(FileStack), run: go("/app/settings/templates") },
+      { id: "signatures", group: "Settings", title: "Signatures & sender name", keywords: "signature display name from send-as", icon: ico(Pencil), run: go("/app/settings/templates") },
       {
         id: "theme", group: "Settings", title: theme === "light" ? "Switch to dark theme" : "Switch to light theme", keywords: "appearance mode dark light",
-        icon: theme === "light" ? <Moon /> : <Sun />, run: () => update.mutate({ appearance: { theme: theme === "light" ? "dark" : "light" } }),
+        icon: theme === "light" ? ico(Moon) : ico(Sun), run: () => update.mutate({ appearance: { theme: theme === "light" ? "dark" : "light" } }),
       },
       ...ACCENTS.filter((a) => a !== accent).map((a): Runnable => ({
         id: `accent-${a}`, group: "Settings", title: `Accent colour: ${a[0]!.toUpperCase()}${a.slice(1)}`, keywords: "theme colour color appearance accent",
-        icon: <Palette />, run: () => update.mutate({ appearance: { accent: a } }),
+        icon: ico(Palette), run: () => update.mutate({ appearance: { accent: a } }),
       })),
       ...(focus.active
-        ? [{ id: "focus-stop", group: "Actions", title: "Exit focus mode", keywords: "focus important only distraction", icon: <Focus />, run: () => focus.stop() } as Runnable]
-        : FOCUS_CHOICES.map((c): Runnable => ({ id: `focus-${c}`, group: "Actions", title: `Focus mode: ${FOCUS_LABELS[c].toLowerCase()}`, keywords: "focus important only distraction do not disturb", icon: <Focus />, run: () => focus.start(c) }))),
-      { id: "shortcuts", group: "Settings", title: "Keyboard shortcuts", shortcut: "?", icon: <Keyboard />, run: () => shortcuts.open() },
+        ? [{ id: "focus-stop", group: "Actions", title: "Exit focus mode", keywords: "focus important only distraction", icon: ico(Focus), run: () => focus.stop() } as Runnable]
+        : FOCUS_CHOICES.map((c): Runnable => ({ id: `focus-${c}`, group: "Actions", title: `Focus mode: ${FOCUS_LABELS[c].toLowerCase()}`, keywords: "focus important only distraction do not disturb", icon: ico(Focus), run: () => focus.start(c) }))),
+      { id: "shortcuts", group: "Settings", title: "Keyboard shortcuts", shortcut: "?", icon: ico(Keyboard), run: () => shortcuts.open() },
     ];
     if (inThread) {
       list.splice(1, 0,
-        { id: "t-reply", group: "Conversation", title: "Reply", shortcut: "r", icon: <Mail />, run: () => pressAfterClose("r") },
-        { id: "t-archive", group: "Conversation", title: "Archive conversation", shortcut: "e", icon: <Archive />, run: () => pressAfterClose("e") },
-        { id: "t-note", group: "Conversation", title: "Add or edit private note", keywords: "notes memo annotate", shortcut: "n", icon: <StickyNote />, run: () => pressAfterClose("n") },
-        { id: "t-star", group: "Conversation", title: "Star / unstar", shortcut: "s", icon: <Star />, run: () => pressAfterClose("s") },
-        { id: "t-unread", group: "Conversation", title: "Mark as unread", shortcut: "u", icon: <MailOpen />, run: () => pressAfterClose("u") },
-        { id: "t-later", group: "Conversation", title: "Save to / remove from Read later", keywords: "bookmark", shortcut: "b", icon: <Bookmark />, run: () => pressAfterClose("b") },
-        { id: "t-snooze", group: "Conversation", title: "Snooze or remind", keywords: "later remind", shortcut: "z", icon: <Clock />, run: () => pressAfterClose("z") },
-        { id: "t-trash", group: "Conversation", title: "Move to Trash", keywords: "delete", shortcut: "#", icon: <Trash2 />, run: () => pressAfterClose("#") },
+        { id: "t-reply", group: "Conversation", title: "Reply", shortcut: "r", icon: ico(Mail), run: () => pressAfterClose("r") },
+        { id: "t-archive", group: "Conversation", title: "Archive conversation", shortcut: "e", icon: ico(FOLDER_META.archive.icon), run: () => pressAfterClose("e") },
+        { id: "t-note", group: "Conversation", title: "Add or edit private note", keywords: "notes memo annotate", shortcut: "n", icon: ico(StickyNote), run: () => pressAfterClose("n") },
+        { id: "t-star", group: "Conversation", title: "Star / unstar", shortcut: "s", icon: ico(FOLDER_META.starred.icon), run: () => pressAfterClose("s") },
+        { id: "t-unread", group: "Conversation", title: "Mark as unread", shortcut: "u", icon: ico(MailOpen), run: () => pressAfterClose("u") },
+        { id: "t-later", group: "Conversation", title: "Save to / remove from Read later", keywords: "bookmark", shortcut: "b", icon: ico(FOLDER_META.later.icon), run: () => pressAfterClose("b") },
+        { id: "t-snooze", group: "Conversation", title: "Snooze or remind", keywords: "later remind", shortcut: "z", icon: ico(FOLDER_META.snoozed.icon), run: () => pressAfterClose("z") },
+        { id: "t-trash", group: "Conversation", title: "Move to Trash", keywords: "delete", shortcut: "#", icon: ico(FOLDER_META.trash.icon), run: () => pressAfterClose("#") },
       );
     }
     return list;
@@ -106,8 +113,8 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     const r = filterCommands(commands, q);
     // Free text always offers to ask Copilot, so ⌘K doubles as the Copilot entry point.
     if (q.trim().length > 1) {
-      r.push({ id: "ask", group: "Copilot", title: `Ask Copilot: “${q.trim()}”`, icon: <Sparkles />, run: () => copilot.open(q.trim(), true) });
-      r.push({ id: "ask-inbox", group: "Copilot", title: `Ask your inbox: “${q.trim()}”`, icon: <SearchCheck />, run: () => copilot.open(q.trim(), true, "ask") });
+      r.push({ id: "ask", group: "Copilot", title: `Ask Copilot: “${q.trim()}”`, icon: ico(Sparkles), run: () => copilot.open(q.trim(), true) });
+      r.push({ id: "ask-inbox", group: "Copilot", title: `Ask your inbox: “${q.trim()}”`, icon: ico(SearchCheck), run: () => copilot.open(q.trim(), true, "ask") });
     }
     return r;
   }, [commands, q, copilot]);
@@ -124,19 +131,26 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     c.run();
   };
 
-  let lastGroup = "";
+  const onCloseAutoFocus = useOverlayReturnFocus(open);
+  const groups: { name: string; items: { c: Runnable; i: number }[] }[] = [];
+  results.forEach((c, i) => {
+    const last = groups[groups.length - 1];
+    if (!last || last.name !== c.group) groups.push({ name: c.group, items: [{ c, i }] });
+    else last.items.push({ c, i });
+  });
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-50 bg-black/55 animate-in" />
+        <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
           data-palette=""
           aria-describedby={undefined}
-          className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow)] animate-in"
+          onCloseAutoFocus={onCloseAutoFocus}
+          className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow-lg)] motion-scale"
         >
           <RD.Title className="sr-only">Command palette</RD.Title>
           <div className="flex items-center gap-2 border-b border-line px-4">
-            <Search className="size-4 text-fg-3" aria-hidden />
+            <Icon icon={Search} className="text-fg-3" />
             <input
               autoFocus
               value={q}
@@ -144,6 +158,8 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(results.length - 1, a + 1)); }
                 else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
+                else if (e.key === "Home") { e.preventDefault(); setActive(0); }
+                else if (e.key === "End") { e.preventDefault(); setActive(Math.max(0, results.length - 1)); }
                 else if (e.key === "Enter") { e.preventDefault(); runAt(active); }
               }}
               placeholder="Type a command, or ask Copilot anything…"
@@ -157,30 +173,29 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             <kbd className="rounded border border-line px-1.5 text-[10.5px] text-fg-3">Esc</kbd>
           </div>
           <div ref={listRef} id="palette-list" role="listbox" aria-label="Commands" className="scroll-thin max-h-[min(60vh,420px)] overflow-y-auto p-1.5">
-            {results.length === 0 && <p className="px-3 py-6 text-center text-[13px] text-fg-3">No matching commands.</p>}
-            {results.map((c, i) => {
-              const header = c.group !== lastGroup ? c.group : null;
-              lastGroup = c.group;
-              return (
-                <div key={c.id}>
-                  {header && <p className="px-2.5 pb-1 pt-2 text-[10.5px] font-medium uppercase tracking-wider text-fg-3">{header}</p>}
+            {results.length === 0 && <p role="presentation" className="px-3 py-6 text-center text-[13px] text-fg-3">No matching commands.</p>}
+            {groups.map((group) => (
+              <div key={group.name} role="group" aria-label={group.name}>
+                <div role="presentation" className="px-2.5 pb-1 pt-2 text-[10.5px] font-medium uppercase tracking-wider text-fg-3">{group.name}</div>
+                {group.items.map(({ c, i }) => (
                   <div
+                    key={c.id}
                     id={`cmd-${c.id}`}
                     role="option"
                     aria-selected={i === active}
                     data-index={i}
                     onMouseMove={() => setActive(i)}
                     onClick={() => runAt(i)}
-                    className={cn("flex cursor-default items-center gap-3 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors", i === active ? "bg-surface-3 text-fg" : "text-fg-2")}
+                    className={cn("flex cursor-default items-center gap-3 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]", i === active ? "bg-surface-3 text-fg" : "text-fg-2")}
                   >
-                    <span className={cn("[&>svg]:size-4", c.group === "Copilot" ? "text-accent-ink" : "text-fg-3")}>{c.icon}</span>
+                    <span className={cn("inline-flex", c.group === "Copilot" ? "text-accent-ink" : "text-fg-3")}>{c.icon}</span>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>
                     {c.shortcut && <kbd className="rounded border border-line px-1.5 text-[10.5px] text-fg-3">{c.shortcut}</kbd>}
-                    {i === active && <CornerDownLeft className="size-3.5 text-fg-3" aria-hidden />}
+                    {i === active && <Icon icon={CornerDownLeft} size="sm" className="text-fg-3" />}
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            ))}
           </div>
         </RD.Content>
       </RD.Portal>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { FileStack, Plus } from "lucide-react";
@@ -60,7 +61,7 @@ export function TemplatePicker({ open, onOpenChange, onPick, onSaveCurrent }: {
           <p className="text-[13px] text-danger">{errorMessage(q.error)}</p>
         ) : !q.data?.length ? (
           <div className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-[13px] text-fg-3">
-            <FileStack className="mx-auto mb-2 size-5 text-accent-400" aria-hidden />
+            <Icon icon={FileStack} size="lg" className="mx-auto mb-2 text-accent-400" />
             No templates yet. Save this message as one, or create them in Settings.
           </div>
         ) : list.length === 0 ? (
@@ -79,7 +80,7 @@ export function TemplatePicker({ open, onOpenChange, onPick, onSaveCurrent }: {
         )}
         <div className="flex items-center justify-between gap-2">
           <Link to="/app/settings/templates" onClick={() => onOpenChange(false)} className="text-[12.5px] text-accent-400 hover:underline">Manage templates</Link>
-          <Button size="sm" icon={<Plus className="size-3.5" />} onClick={() => { onOpenChange(false); onSaveCurrent(); }}>Save this message as a template</Button>
+          <Button size="sm" icon={<Icon icon={Plus} size="sm" />} onClick={() => { onOpenChange(false); onSaveCurrent(); }}>Save this message as a template</Button>
         </div>
       </div>
     </Dialog>

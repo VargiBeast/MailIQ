@@ -55,14 +55,14 @@ export function MailView() {
     <div className="flex h-full min-h-0">
       <div
         className={cn(
-          "h-full min-h-0 w-full shrink-0 border-r border-line bg-surface lg:w-[380px] xl:w-[420px]",
+          "animate-pane h-full min-h-0 w-full shrink-0 border-r border-line bg-surface lg:w-[380px] xl:w-[420px]",
           hasThread && "hidden",
           hasThread && !fullPane && "lg:block",
         )}
       >
         <ThreadList onOpenSidebar={() => SidebarContext.open()} selectedKey={selectedKey} onThreadsChange={setThreads} />
       </div>
-      <div className={cn("h-full min-h-0 min-w-0 flex-1 bg-bg", !hasThread && "hidden lg:block", fullPane && !hasThread && "lg:hidden")}>
+      <div className={cn("animate-pane h-full min-h-0 min-w-0 flex-1 bg-bg", !hasThread && "hidden lg:block", fullPane && !hasThread && "lg:hidden")}>
         <Reader
           accountId={accountId}
           threadId={threadId}

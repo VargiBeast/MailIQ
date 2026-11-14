@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { singleKeysOff } from "@/lib/prefs";
-import { Navigate, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import * as RD from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { InstallHint } from "./InstallHint";
 import { FocusBanner } from "./FocusMode";
 import { useFocusMode } from "@/lib/focus";
 import { setPrefs } from "@/lib/prefs";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
 
 export const SidebarContext = { open: () => {} };
 
@@ -48,6 +49,7 @@ function Shell() {
   SidebarContext.open = () => setDrawer(true);
   const g = session?.settings?.general;
   const keys = session?.settings?.shortcuts.enabled ?? true;
+  const onDrawerCloseAutoFocus = useOverlayReturnFocus(drawer);
   setPrefs({ language: g?.language ?? "auto", timeZone: g?.timeZone ?? "auto", shortcuts: keys });
   useGlobalShortcuts();
   useMailSync();
@@ -77,14 +79,16 @@ function Shell() {
         <RD.Portal>
           <RD.Overlay
             data-drawer-overlay=""
-            className="fixed inset-x-0 top-0 z-40 h-[100dvh] min-h-full bg-[var(--overlay)] lg:hidden"
+            className="fixed inset-x-0 top-0 z-40 h-[100dvh] min-h-full bg-[var(--overlay)] motion-overlay lg:hidden"
           />
           <RD.Content
             className={cn(
               "fixed left-0 top-0 z-50 box-border flex h-[100dvh] min-h-full w-[min(300px,88vw)] flex-col",
-              "border-r border-line bg-surface pb-[var(--sab)] pt-[var(--sat)] shadow-[var(--shadow-lg)] animate-in lg:hidden",
+              "border-r border-line bg-surface pb-[var(--sab)] pt-[var(--sat)] shadow-[var(--shadow-lg)] lg:hidden",
+              "motion-slide-from-left motion-distance-lg",
             )}
             aria-describedby={undefined}
+            onCloseAutoFocus={onDrawerCloseAutoFocus}
           >
             <RD.Title className="sr-only">Navigation</RD.Title>
             <Sidebar onNavigate={() => setDrawer(false)} />
@@ -114,6 +118,19 @@ function PaletteHost() {
   return <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />;
 }
 
+/** A hidden or minimized composer still has a dialog role in the DOM; it must not swallow shortcuts. */
+function shortcutBlockedByDialog() {
+  for (const el of document.querySelectorAll<HTMLElement>("[role=dialog]")) {
+    if (el.hidden || el.closest("[hidden]")) continue;
+    if (el.getAttribute("aria-hidden") === "true") continue;
+    if (el.dataset.minimized != null) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") continue;
+    return true;
+  }
+  return false;
+}
+
 function useGlobalShortcuts() {
   const navigate = useNavigate();
   const composer = useComposer();
@@ -123,7 +140,7 @@ function useGlobalShortcuts() {
       if (singleKeysOff(e)) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
-      if (e.metaKey || e.ctrlKey || e.altKey || document.querySelector("[role=dialog]")) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || shortcutBlockedByDialog()) return;
       if (pendingG.current && Date.now() - pendingG.current < 1200) {
         pendingG.current = 0;
         const dest = { i: "/app/inbox", o: "/app/overview", s: "/app/starred", d: "/app/drafts", t: "/app/sent" }[e.key];
@@ -202,7 +219,34 @@ const loadComposer = () => import("./composer/Composer");
 const ComposerHost = lazy(() => loadComposer().then((m) => ({ default: m.ComposerHost })));
 
 function LazyComposer() {
-  const { requests } = useComposer();
+  const { requests, returnFocus } = useComposer();
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (requests.length) {
+      wasOpen.current = true;
+      return;
+    }
+    if (!wasOpen.current) return;
+    wasOpen.current = false;
+    const back = returnFocus.current;
+    returnFocus.current = null;
+    if (!back) return;
+    const focusOpener = () => {
+      if (back.isConnected) {
+        back.focus();
+        return;
+      }
+      // Mobile nav unmounts its Compose button while the composer is open, then mounts a new one.
+      const label = back.getAttribute("aria-label");
+      if (!label) return;
+      const next = [...document.querySelectorAll<HTMLElement>(`[aria-label="${CSS.escape(label)}"]`)].find((el) => {
+        const box = el.getBoundingClientRect();
+        return box.width > 0 && box.height > 0;
+      });
+      next?.focus();
+    };
+    focusOpener();
+  }, [requests, returnFocus]);
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500));
     idle(() => void loadComposer());
