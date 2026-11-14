@@ -8,6 +8,7 @@ import { FOCUS_LABELS, useFocusMode } from "@/lib/focus";
 import {
   BarChart3, CornerDownLeft, FileStack, Keyboard, Mail, MailOpen, Moon, Pencil, MailMinus, Palette, Focus, Search, SearchCheck, StickyNote, Settings, ShieldCheck, Sparkles, Sun, Tags, UserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
 import { useSession } from "@/lib/session";
 import { useUpdateSettings } from "@/lib/settings";
 import { useComposer } from "./composer/context";
@@ -130,6 +131,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     c.run();
   };
 
+  const onCloseAutoFocus = useOverlayReturnFocus(open);
   const groups: { name: string; items: { c: Runnable; i: number }[] }[] = [];
   results.forEach((c, i) => {
     const last = groups[groups.length - 1];
@@ -143,6 +145,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
         <RD.Content
           data-palette=""
           aria-describedby={undefined}
+          onCloseAutoFocus={onCloseAutoFocus}
           className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-24px)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--shadow-lg)] motion-scale"
         >
           <RD.Title className="sr-only">Command palette</RD.Title>

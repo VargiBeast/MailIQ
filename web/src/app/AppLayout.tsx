@@ -19,6 +19,7 @@ import { InstallHint } from "./InstallHint";
 import { FocusBanner } from "./FocusMode";
 import { useFocusMode } from "@/lib/focus";
 import { setPrefs } from "@/lib/prefs";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
 
 export const SidebarContext = { open: () => {} };
 
@@ -48,6 +49,7 @@ function Shell() {
   SidebarContext.open = () => setDrawer(true);
   const g = session?.settings?.general;
   const keys = session?.settings?.shortcuts.enabled ?? true;
+  const onDrawerCloseAutoFocus = useOverlayReturnFocus(drawer);
   setPrefs({ language: g?.language ?? "auto", timeZone: g?.timeZone ?? "auto", shortcuts: keys });
   useGlobalShortcuts();
   useMailSync();
@@ -86,6 +88,7 @@ function Shell() {
               "motion-slide-from-left motion-distance-lg",
             )}
             aria-describedby={undefined}
+            onCloseAutoFocus={onDrawerCloseAutoFocus}
           >
             <RD.Title className="sr-only">Navigation</RD.Title>
             <Sidebar onNavigate={() => setDrawer(false)} />

@@ -10,6 +10,7 @@ import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/cn";
 import { scrollBehavior } from "@/lib/motion";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Kbd } from "@/components/ui/misc";
 import { useCopilot } from "./context";
@@ -98,6 +99,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
   }
 
   const prompts = scoped ? THREAD_PROMPTS : INBOX_PROMPTS;
+  const onCloseAutoFocus = useOverlayReturnFocus(open);
 
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
@@ -105,6 +107,7 @@ export function CopilotPanel({ open, onOpenChange, context, prefill }: {
         <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
           data-expanded={expanded ? "true" : "false"}
+          onCloseAutoFocus={onCloseAutoFocus}
           className={cn(
             "copilot-panel fixed z-50 flex flex-col border border-line-strong bg-surface shadow-[var(--shadow-lg)] outline-none",
             "motion-scale",
