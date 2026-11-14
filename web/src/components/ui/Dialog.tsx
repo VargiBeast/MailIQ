@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { useOverlayReturnFocus } from "@/lib/returnFocus";
 import { Button } from "./Button";
 import { Tooltip } from "./Tooltip";
 
@@ -23,11 +24,13 @@ export function Dialog({
   className?: string;
   wide?: boolean;
 }) {
+  const onCloseAutoFocus = useOverlayReturnFocus(open);
   return (
     <RD.Root open={open} onOpenChange={onOpenChange}>
       <RD.Portal>
         <RD.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] motion-overlay" />
         <RD.Content
+          onCloseAutoFocus={onCloseAutoFocus}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-32px)] w-[calc(100vw-24px)] -translate-x-1/2 -translate-y-1/2",
             "overflow-auto rounded-[var(--radius-xl)] border border-line-strong bg-surface p-5",

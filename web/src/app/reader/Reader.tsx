@@ -215,12 +215,20 @@ function ReaderBody({ thread, position, onClose, onOpenCopilot, folder }: { thre
 
 function useReaderShortcuts(map: Record<string, () => void>) {
   useEffect(() => {
+    // Radix closes a menu in the React key handler, which flushes before this
+    // window listener runs. Remember an overlay that was open on the way down.
+    let escapeOwnedByOverlay = false;
+    const overlayOpen = () =>
+      !!document.querySelector("[role=dialog], [role=menu], [role=listbox]");
+    const onCapture = (e: KeyboardEvent) => {
+      escapeOwnedByOverlay = e.key === "Escape" && overlayOpen();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (singleKeysOff(e)) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (document.querySelector("[role=dialog]")) return;
+      if (e.key === "Escape" && (escapeOwnedByOverlay || overlayOpen())) return;
       const fn = map[e.key];
       if (fn) {
         e.preventDefault();
@@ -232,9 +240,11 @@ function useReaderShortcuts(map: Record<string, () => void>) {
       const fn = map[(e as CustomEvent<string>).detail];
       if (fn) fn();
     };
+    window.addEventListener("keydown", onCapture, true);
     window.addEventListener("keydown", onKey);
     window.addEventListener("fluent:reader-command", onCommand);
     return () => {
+      window.removeEventListener("keydown", onCapture, true);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("fluent:reader-command", onCommand);
     };
