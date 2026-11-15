@@ -26,6 +26,21 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function MicrosoftIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 21 21" className={cn("size-5", className)} aria-hidden>
+      <path fill="#f25022" d="M1 1h9v9H1z" />
+      <path fill="#00a4ef" d="M1 11h9v9H1z" />
+      <path fill="#7fba00" d="M11 1h9v9h-9z" />
+      <path fill="#ffb900" d="M11 11h9v9h-9z" />
+    </svg>
+  );
+}
+
+function nextQuery(next: string | null): string {
+  return next && next.startsWith("/app") ? `?next=${encodeURIComponent(next)}` : "";
+}
+
 export type SignInLinkProps = {
   /** Visual size: primary for hero/CTA, compact for the nav. */
   variant?: "primary" | "compact";
@@ -33,21 +48,22 @@ export type SignInLinkProps = {
 };
 
 /**
- * Google sign-in anchor for marketing pages.
- * href is always GET /api/auth/google/start; `next` is appended only when it
- * starts with `/app`. When Google is not configured the control is disabled.
+ * Sign-in controls for marketing pages.
+ * Google: GET /api/auth/google/start
+ * Microsoft (when configured): GET /api/auth/microsoft/start
+ * `next` is appended only when it starts with `/app`.
  */
 export default function SignInLink({ variant = "primary", className }: SignInLinkProps): ReactNode {
   const { config } = useSession();
   const [params] = useSearchParams();
   const next = params.get("next");
   const googleReady = config?.google !== false;
-  const signInHref =
-    `/api/auth/google/start` +
-    (next && next.startsWith("/app") ? `?next=${encodeURIComponent(next)}` : "");
+  const microsoftReady = Boolean(config?.microsoft);
+  const googleHref = `/api/auth/google/start${nextQuery(next)}`;
+  const microsoftHref = `/api/auth/microsoft/start${nextQuery(next)}`;
 
   if (variant === "compact") {
-    if (!googleReady) {
+    if (!googleReady && !microsoftReady) {
       return (
         <span
           aria-disabled="true"
@@ -62,7 +78,7 @@ export default function SignInLink({ variant = "primary", className }: SignInLin
     }
     return (
       <a
-        href={signInHref}
+        href={googleReady ? googleHref : microsoftHref}
         className={cn(
           "inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-line-strong px-3.5 text-[13.5px] font-medium text-fg transition hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           className,
@@ -73,31 +89,34 @@ export default function SignInLink({ variant = "primary", className }: SignInLin
     );
   }
 
-  if (!googleReady) {
-    return (
-      <span
-        aria-disabled="true"
-        className={cn(
-          "inline-flex min-h-12 cursor-not-allowed items-center justify-center gap-3 rounded-[var(--radius-lg)] bg-white/60 px-6 text-[15px] font-medium text-[#1f1f1f]/70",
-          className,
-        )}
-      >
-        <GoogleIcon />
-        Sign in with Google
-      </span>
-    );
-  }
-
   return (
-    <a
-      href={signInHref}
-      className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-3 rounded-[var(--radius-lg)] bg-white px-6 text-[15px] font-medium text-[#1f1f1f] shadow-[0_10px_40px_-12px_rgba(139,92,246,0.7)] transition hover:bg-[#f2f2f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        className,
+    <div className={cn("flex w-full max-w-sm flex-col items-stretch gap-3", className)}>
+      {googleReady ? (
+        <a
+          href={googleHref}
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-[var(--radius-lg)] bg-white px-6 text-[15px] font-medium text-[#1f1f1f] shadow-[0_10px_40px_-12px_rgba(139,92,246,0.7)] transition hover:bg-[#f2f2f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <GoogleIcon />
+          Sign in with Google
+        </a>
+      ) : (
+        <span
+          aria-disabled="true"
+          className="inline-flex min-h-12 cursor-not-allowed items-center justify-center gap-3 rounded-[var(--radius-lg)] bg-white/60 px-6 text-[15px] font-medium text-[#1f1f1f]/70"
+        >
+          <GoogleIcon />
+          Sign in with Google
+        </span>
       )}
-    >
-      <GoogleIcon />
-      Sign in with Google
-    </a>
+      {microsoftReady ? (
+        <a
+          href={microsoftHref}
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-line-strong bg-surface/80 px-6 text-[15px] font-medium text-fg transition hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <MicrosoftIcon />
+          Sign in with Microsoft
+        </a>
+      ) : null}
+    </div>
   );
 }
