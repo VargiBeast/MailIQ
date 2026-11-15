@@ -39,6 +39,22 @@ export function toPublicAccount(a: AccountRow): PublicAccount {
   };
 }
 
+/** Create or refresh the MailIQ user row for a Microsoft identity.
+ *  Subject is stored in google_sub as `ms:{oid}` (same column Google uses).
+ */
+export async function upsertUserFromMicrosoft(profile: { id: string; email: string; name: string }): Promise<{ id: string; isNew: boolean }> {
+  const db = getDb();
+  const sub = `ms:${profile.id}`;
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.googleSub, sub)).limit(1);
+  if (existing[0]) {
+    await db.update(users).set({ email: profile.email, name: profile.name, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
+    return { id: existing[0].id, isNew: false };
+  }
+  const [row] = await db.insert(users).values({ googleSub: sub, email: profile.email, name: profile.name, picture: null }).returning({ id: users.id });
+  await db.insert(userSettings).values({ userId: row!.id }).onConflictDoNothing();
+  return { id: row!.id, isNew: true };
+}
+
 export async function upsertUser(identity: GoogleIdentity): Promise<{ id: string; isNew: boolean }> {
   const db = getDb();
   const existing = await db.select({ id: users.id }).from(users).where(eq(users.googleSub, identity.sub)).limit(1);
