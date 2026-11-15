@@ -30,7 +30,7 @@ export function AddAccountDialog({ open, onOpenChange }: { open: boolean; onOpen
             <Icon icon={Mail} className="text-fg-3" /> Gmail or Google Workspace
           </button>
           <button type="button" className={option} disabled={!config?.microsoft} aria-describedby={config?.microsoft ? undefined : "outlook-not-configured"}
-            onClick={() => { window.location.href = "/api/auth/microsoft/start"; }}>
+            onClick={() => { window.location.href = "/api/auth/microsoft/start?mode=link"; }}>
             <Icon icon={Mail} className="text-fg-3" />
             <span className="flex-1">Outlook or Microsoft 365</span>
             {!config?.microsoft && <span id="outlook-not-configured" className="text-[12px] text-fg-3">Not configured</span>}
@@ -52,61 +52,76 @@ export function AddAccountDialog({ open, onOpenChange }: { open: boolean; onOpen
 }
 
 function choiceTitle(c: Choice): string {
-  return c.kind === "preset" ? `Connect ${c.preset.label}` : "Connect another mailbox";
+  if (c.kind === "preset") return `Add ${c.preset.label}`;
+  if (c.kind === "other") return "Add IMAP/SMTP account";
+  return "Add account";
 }
 
 function ImapForm({ choice, onBack, onDone }: { choice: Exclude<Choice, { kind: "google" }>; onBack: () => void; onDone: () => void }) {
   const qc = useQueryClient();
   const preset = choice.kind === "preset" ? choice.preset : null;
-  const [f, setF] = useState({ email: "", name: "", username: "", password: "", imapHost: "", smtpHost: "", smtpPort: "465" });
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((v) => ({ ...v, [k]: e.target.value }));
-  const connect = useMutation({
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [imapHost, setImapHost] = useState(preset?.imapHost ?? "");
+  const [imapPort, setImapPort] = useState(String(preset?.imapPort ?? 993));
+  const [smtpHost, setSmtpHost] = useState(preset?.smtpHost ?? "");
+  const [smtpPort, setSmtpPort] = useState(String(preset?.smtpPort ?? 465));
+  const save = useMutation({
     mutationFn: () => {
       const body: ImapAccountInput = {
-        email: f.email.trim(),
-        name: f.name.trim(),
-        ...(f.username.trim() ? { username: f.username.trim() } : {}),
-        password: f.password.replace(/\s+/g, preset ? "" : " ").trim(),
-        imap: preset ? preset.imap : { host: f.imapHost.trim(), port: 993 },
-        smtp: preset ? preset.smtp : { host: f.smtpHost.trim(), port: Number(f.smtpPort) },
+        email: email.trim(),
+        password,
+        imapHost: imapHost.trim(),
+        imapPort: Number(imapPort) || 993,
+        smtpHost: smtpHost.trim(),
+        smtpPort: Number(smtpPort) || 465,
+        presetId: preset?.id,
       };
       return api.post("/mail-accounts/imap", body);
     },
     onSuccess: () => {
+      toast.success("Account connected");
       void qc.invalidateQueries({ queryKey: ["session"] });
-      void qc.invalidateQueries({ queryKey: ["threads"] });
-      toast.success(`${f.email} is connected`);
       onDone();
     },
-    onError: (e) => toast.error("Couldn't connect", { description: errorMessage(e) }),
+    onError: (e) => toast.error(errorMessage(e)),
   });
   return (
-    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); connect.mutate(); }}>
-      <p className="text-[12.5px] text-fg-3">
-        Use an <strong className="text-fg-2">app password</strong>, not your normal password.
-        {preset && <> Create one in your <a href={preset.appPasswordUrl} target="_blank" rel="noopener noreferrer" className="text-accent-ink underline">{preset.label} account settings</a>.</>}
-        {" "}It's stored encrypted and only used to read and send your mail.
-      </p>
-      <Field label="Email address">{(id) => <Input id={id} type="email" autoComplete="email" required value={f.email} onChange={set("email")} />}</Field>
-      <Field label="Your name (shown to recipients)">{(id) => <Input id={id} autoComplete="name" value={f.name} onChange={set("name")} />}</Field>
-      <Field label="App password">{(id) => <Input id={id} type="password" autoComplete="new-password" required value={f.password} onChange={set("password")} />}</Field>
+    <form
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <button type="button" className="inline-flex items-center gap-1 text-[13px] text-fg-2 hover:text-fg" onClick={onBack}>
+        <Icon icon={ArrowLeft} size="sm" /> Back
+      </button>
+      <Field label="Email">
+        <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required autoComplete="username" />
+      </Field>
+      <Field label="App password" hint="Use an app-specific password from your provider, not your normal login password.">
+        <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required autoComplete="current-password" />
+      </Field>
       {!preset && (
         <>
-          <Field label="Username" hint="Leave empty to use the email address.">{(id) => <Input id={id} autoComplete="username" value={f.username} onChange={set("username")} />}</Field>
-          <Field label="IMAP server (port 993, TLS)">{(id) => <Input id={id} required placeholder="imap.example.com" value={f.imapHost} onChange={set("imapHost")} />}</Field>
-          <Field label="SMTP server">{(id) => <Input id={id} required placeholder="smtp.example.com" value={f.smtpHost} onChange={set("smtpHost")} />}</Field>
-          <Field label="SMTP port">{(id) => (
-            <select id={id} value={f.smtpPort} onChange={set("smtpPort")} className="h-9 w-full rounded-lg border border-line bg-surface-2 px-2 text-[13px] text-fg">
-              <option value="465">465 (TLS)</option>
-              <option value="587">587 (STARTTLS)</option>
-            </select>
-          )}</Field>
+          <Field label="IMAP host">
+            <Input value={imapHost} onChange={(e) => setImapHost(e.target.value)} required />
+          </Field>
+          <Field label="IMAP port">
+            <Input value={imapPort} onChange={(e) => setImapPort(e.target.value)} inputMode="numeric" required />
+          </Field>
+          <Field label="SMTP host">
+            <Input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} required />
+          </Field>
+          <Field label="SMTP port">
+            <Input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} inputMode="numeric" required />
+          </Field>
         </>
       )}
-      <div className="flex justify-between gap-2 pt-1">
-        <Button icon={<Icon icon={ArrowLeft} size="sm" />} onClick={onBack}>Back</Button>
-        <Button type="submit" variant="primary" loading={connect.isPending}>Connect</Button>
-      </div>
+      <Button type="submit" variant="primary" className="w-full" loading={save.isPending}>
+        Connect
+      </Button>
     </form>
   );
 }
