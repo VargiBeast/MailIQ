@@ -9,7 +9,7 @@ import { googleConfigured, microsoftConfigured, secureCookies } from "../env.js"
 import { buildMicrosoftAuthorizeUrl, exchangeMicrosoftCode, fetchMicrosoftProfile } from "../auth/microsoft.js";
 import { buildAuthorizeUrl, exchangeCode, verifyIdToken } from "../auth/google.js";
 import { createSession, destroySession, requireUser } from "../auth/session.js";
-import { getOwnedAccount, listAccounts, logSecurityEvent, toPublicAccount, upsertAccount, upsertMicrosoftAccount, upsertUser } from "../services/accounts.js";
+import { getOwnedAccount, listAccounts, logSecurityEvent, toPublicAccount, upsertAccount, upsertMicrosoftAccount, upsertUser, upsertUserFromMicrosoft } from "../services/accounts.js";
 import { getDb } from "../db/client.js";
 import { userSettings } from "../db/schema.js";
 import { rateLimit } from "../lib/rateLimit.js";
@@ -137,19 +137,38 @@ authRoutes.get("/google/callback", rateLimit("auth", 30), async (c) => {
 });
 
 // ---------------- Microsoft (Outlook / Microsoft 365 mailboxes) ----------------
-// Same pattern as Google: an encrypted, HttpOnly, SameSite=Lax state cookie holding state + PKCE verifier,
-// bound to the signed-in user. Outlook is an extra mailbox, so it always needs a FLUENT session (link mode).
+// PKCE + encrypted state cookie. mode=login creates a MailIQ session (identity key ms:{oid});
+// mode=link attaches an Outlook mailbox to an existing signed-in user.
 const MS_OAUTH_COOKIE = "fluent_oauth_ms";
 
-interface MsOAuthState { state: string; verifier: string; userId: string; exp: number }
+interface MsOAuthState {
+  state: string;
+  verifier: string;
+  mode: "login" | "link";
+  userId?: string;
+  next: string;
+  exp: number;
+}
 
 authRoutes.get("/microsoft/start", rateLimit("auth", 30), async (c) => {
-  if (!microsoftConfigured()) return c.redirect("/app/account?error=outlook_not_configured", 302);
+  if (!microsoftConfigured()) {
+    const user = c.get("user");
+    return c.redirect(user ? "/app/settings/accounts?error=outlook_not_configured" : "/?error=not_configured", 302);
+  }
+  const q = startQuery.parse(c.req.query());
   const user = c.get("user");
-  if (!user) return c.redirect("/?error=session_required", 302);
-  const q = z.object({ account: z.string().uuid().optional() }).parse(c.req.query());
-  const loginHint = q.account ? (await getOwnedAccount(user.id, q.account)).email : undefined;
-  const st: MsOAuthState = { state: randomToken(24), verifier: randomToken(48), userId: user.id, exp: Date.now() + OAUTH_TTL_MS };
+  if (q.mode === "link") {
+    if (!user) return c.redirect("/?error=session_required", 302);
+  }
+  const loginHint = q.account && user ? (await getOwnedAccount(user.id, q.account)).email : undefined;
+  const st: MsOAuthState = {
+    state: randomToken(24),
+    verifier: randomToken(48),
+    mode: q.mode,
+    userId: q.mode === "link" ? user!.id : undefined,
+    next: safeNext(q.next),
+    exp: Date.now() + OAUTH_TTL_MS,
+  };
   setCookie(c, MS_OAUTH_COOKIE, encrypt(JSON.stringify(st), "oauth-ms"), {
     httpOnly: true,
     secure: secureCookies(),
@@ -163,26 +182,52 @@ authRoutes.get("/microsoft/start", rateLimit("auth", 30), async (c) => {
 authRoutes.get("/microsoft/callback", rateLimit("auth", 30), async (c) => {
   const raw = getCookie(c, MS_OAUTH_COOKIE);
   deleteCookie(c, MS_OAUTH_COOKIE, { path: "/api/auth", secure: secureCookies() });
-  const fail = (code: string) => c.redirect(`/app/account?error=${encodeURIComponent(code)}`, 302);
-  if (!raw) return fail("state_missing");
-  let st: MsOAuthState;
-  try {
-    st = JSON.parse(decrypt(raw, "oauth-ms")) as MsOAuthState;
-  } catch {
-    return fail("state_invalid");
-  }
   const q = c.req.query();
+  let st: MsOAuthState | null = null;
+  if (raw) {
+    try {
+      st = JSON.parse(decrypt(raw, "oauth-ms")) as MsOAuthState;
+    } catch {
+      st = null;
+    }
+  }
+  const failTo = (path: string, code: string) => c.redirect(`${path}?error=${encodeURIComponent(code)}`, 302);
+  if (!st) return failTo("/", "state_missing");
+  const fail = (code: string) => failTo(st!.mode === "link" ? "/app/settings/accounts" : "/", code);
   if (!q.state || !safeEqual(q.state, st.state) || st.exp < Date.now()) return fail("state_invalid");
-  if (q.error) return fail(q.error === "access_denied" ? "access_denied" : q.error === "consent_required" ? "admin_consent_required" : "oauth_error");
+  if (q.error) {
+    return fail(q.error === "access_denied" ? "access_denied" : q.error === "consent_required" ? "admin_consent_required" : "oauth_error");
+  }
   if (!q.code || q.code.length > 4096) return fail("code_missing");
-  const user = c.get("user");
-  if (!user || user.id !== st.userId) return fail("session_mismatch");
+
   try {
     const tokens = await exchangeMicrosoftCode(q.code, st.verifier);
     const profile = await fetchMicrosoftProfile(tokens.access_token);
-    const acc = await upsertMicrosoftAccount(user.id, profile, tokens);
-    await logSecurityEvent(user.id, "account_connected", `outlook:${profile.email}`);
-    return c.redirect(acc.status === "active" ? "/app/account?connected=outlook" : `/app/account?error=${acc.status === "insufficient_scopes" ? "insufficient_scopes" : "offline_access_missing"}`, 302);
+
+    if (st.mode === "link") {
+      const user = c.get("user");
+      if (!user || user.id !== st.userId) return fail("session_mismatch");
+      const acc = await upsertMicrosoftAccount(user.id, profile, tokens);
+      await logSecurityEvent(user.id, "account_connected", `outlook:${profile.email}`);
+      const dest =
+        acc.status === "active"
+          ? "/app/settings/accounts?connected=outlook"
+          : `/app/settings/accounts?error=${acc.status === "insufficient_scopes" ? "insufficient_scopes" : "offline_access_missing"}`;
+      return c.redirect(dest, 302);
+    }
+
+    const { id: userId } = await upsertUserFromMicrosoft(profile);
+    const acc = await upsertMicrosoftAccount(userId, profile, tokens);
+    if (c.get("sessionId")) await destroySession(c);
+    await createSession(c, userId);
+    await logSecurityEvent(userId, "sign_in", c.req.header("user-agent")?.slice(0, 120) ?? "");
+    const settings = await getDb()
+      .select({ onboarded: userSettings.onboarded })
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId))
+      .limit(1);
+    if (acc.status !== "active") return c.redirect("/app/onboarding?error=insufficient_scopes", 302);
+    return c.redirect(settings[0]?.onboarded ? st.next : "/app/onboarding", 302);
   } catch (err) {
     const code = err instanceof HttpError ? err.code : "signin_failed";
     logger.warn({ code }, "ms_oauth_callback_failed");
